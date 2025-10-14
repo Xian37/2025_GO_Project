@@ -20,8 +20,16 @@ type Message struct {
 	Room     string `json:"room"`
 	Nickname string `json:"nickname"`
 	Avatar   string `json:"avatar"`
-	Content  string `json:"content"`
+	Content  string `json:"content,omitempty"`
 	Type     string `json:"type"` // chat, vote, leave, switch
+	Question string `json:"question,omitempty"`
+	Answer   string `json:"answer,omitempty"`
+}
+
+type Quiz struct {
+	Question string
+	Answer   string
+	Active   bool
 }
 
 var upgrader = websocket.Upgrader{
@@ -32,10 +40,12 @@ var (
 	rooms        = make(map[string]map[*Client]bool)
 	history      = make(map[string][]Message)
 	votes        = make(map[string]map[string]int)
+	quizzes      = make(map[string]*Quiz)
 	broadcast    = make(chan Message)
 	roomsMutex   sync.Mutex
 	historyMutex sync.Mutex
 	votesMutex   sync.Mutex
+	quizzesMutex sync.Mutex
 )
 
 func main() {
@@ -127,11 +137,8 @@ func handleMessages() {
 	for {
 		msg := <-broadcast
 
-		historyMutex.Lock()
-		history[msg.Room] = append(history[msg.Room], msg)
-		historyMutex.Unlock()
-
-		if msg.Type == "vote" {
+		switch msg.Type {
+		case "vote":
 			votesMutex.Lock()
 			if votes[msg.Room] == nil {
 				votes[msg.Room] = make(map[string]int)
@@ -144,11 +151,67 @@ func handleMessages() {
 				Content:  fmt.Sprintf("投票結果: %v", votes[msg.Room]),
 				Type:     "chat",
 			}
+			historyMutex.Lock()
+			history[msg.Room] = append(history[msg.Room], msg)
+			historyMutex.Unlock()
+
 			for client := range rooms[msg.Room] {
 				client.conn.WriteJSON(result)
 			}
 			votesMutex.Unlock()
 			continue
+
+		case "quiz_start":
+			quizzesMutex.Lock()
+			quizzes[msg.Room] = &Quiz{
+				Question: msg.Question,
+				Answer:   msg.Answer,
+				Active:   true,
+			}
+			quizzesMutex.Unlock()
+
+			broadcastMsg := Message{
+				Type:     "quiz_start",
+				Room:     msg.Room,
+				Nickname: msg.Nickname,
+				Question: msg.Question,
+			}
+
+			historyMutex.Lock()
+			history[msg.Room] = append(history[msg.Room], broadcastMsg)
+			historyMutex.Unlock()
+
+			for client := range rooms[msg.Room] {
+				client.conn.WriteJSON(broadcastMsg)
+			}
+			continue
+
+		case "quiz_answer":
+			quizzesMutex.Lock()
+			quiz, exists := quizzes[msg.Room]
+			isCorrect := exists && quiz.Active && (quiz.Answer == msg.Answer)
+			if isCorrect {
+				quiz.Active = false
+			}
+			quizzesMutex.Unlock()
+
+			if isCorrect {
+				resultMsg := Message{
+					Type:     "quiz_result",
+					Room:     msg.Room,
+					Nickname: msg.Nickname,
+					Answer:   quiz.Answer,
+				}
+				for client := range rooms[msg.Room] {
+					client.conn.WriteJSON(resultMsg)
+				}
+			}
+			continue
+
+		default:
+			historyMutex.Lock()
+			history[msg.Room] = append(history[msg.Room], msg)
+			historyMutex.Unlock()
 		}
 
 		for client := range rooms[msg.Room] {

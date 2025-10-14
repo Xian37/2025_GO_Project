@@ -232,6 +232,12 @@ function sendMessage() {
   $('msg').value = '';
 }
 
+$('msg').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
 // ===== 投票（沿用你原有的概念）=====
 function sendVote(option) {
   ws.send(JSON.stringify({ type: 'vote', nickname, room, avatar, content: option }));

@@ -7,7 +7,7 @@
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #e0f7fa; }
 body { display: flex; justify-content: center; align-items: center; }
 canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; }
-.container { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 92%; max-width: 980px; color: #fff; z-index: 1; }
+.container { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 92%; max-width: 1280px; color: #fff; z-index: 1; }
 h2, h3 { margin: 8px 0 12px; }
 input, button, textarea { font-size: 1em; padding: 10px 12px; margin: 6px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: #fff; }
 button:hover { background: rgba(255,255,255,0.25); cursor: pointer; }
@@ -57,57 +57,69 @@ audio { margin-top: 6px; width: 220px; }
   </div>
 
   <div id="chat" style="display:none;">
-    <h3 id="roomTitle"></h3>
+    <div style="display: flex; gap: 16px;">
+      <div id="chat-container" style="flex: 1;">
+        <h3 id="roomTitle"></h3>
 
-    <!-- 工具列：即時搶答、語音、圖片/GIF、拖曳上傳 -->
-    <div class="tools">
-      <div class="tool-box">
-        <div class="row">
-          <strong>即時搶答</strong>
-          <input id="quizQuestion" placeholder="題目（例如：1+1=？）">
-          <input id="quizAnswer" placeholder="答案（例如：2）">
-          <button onclick="startQuiz()">發起題目</button>
-          <span id="quizStatus" class="quiz-info"></span>
+        <!-- 工具列：即時搶答、語音、圖片/GIF、拖曳上傳 -->
+        <div class="tools">
+          <div class="tool-box">
+            <div class="row">
+              <strong>即時搶答</strong>
+              <input id="quizQuestion" placeholder="題目（例如：1+1=？）">
+              <input id="quizAnswer" placeholder="答案（例如：2）">
+              <button onclick="startQuiz()">發起題目</button>
+              <span id="quizStatus" class="quiz-info"></span>
+            </div>
+            <div class="row">
+              <input id="quizMyAnswer" placeholder="你的答案">
+              <button onclick="submitQuizAnswer()">搶答</button>
+            </div>
+          </div>
+
+          <div class="tool-box">
+            <div class="row">
+              <strong>語音訊息</strong>
+              <button id="recBtn" onclick="toggleRecord()">開始錄音</button>
+              <span id="sttStatus" class="small"></span>
+            </div>
+          </div>
+
+          <div class="tool-box">
+            <div class="row">
+              <strong>圖片 / GIF 分享</strong>
+              <input type="file" id="imgPicker" accept="image/*" multiple>
+              <button onclick="sendPickedImages()">送出選取檔案</button>
+            </div>
+            <div id="dropzone">將圖片或 GIF 拖曳到此處上傳</div>
+          </div>
         </div>
-        <div class="row">
-          <input id="quizMyAnswer" placeholder="你的答案">
-          <button onclick="submitQuizAnswer()">搶答</button>
+
+        <ul id="messages"></ul>
+
+        <div id="typing-indicator" class="small" style="height: 20px; padding-left: 10px;"></div>
+
+        <!-- 輸入列 + 反應預覽 -->
+        <div class="footer-row">
+          <div class="row" style="flex: 1 1 420px;">
+            <input id="msg" placeholder="輸入訊息並送出（輸入 '流星' 可觸發特效）" style="flex:1;">
+            <button onclick="sendMessage()">送出</button>
+          </div>
+          <div class="row small">提示：點擊訊息下的 👍 😂 ❤️ 🚀 可以送出表情反應</div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button onclick="leaveRoom()">退出房間</button>
+          <input id="newRoom" placeholder="新房間">
+          <button onclick="switchRoom()">切換房間</button>
         </div>
       </div>
 
-      <div class="tool-box">
-        <div class="row">
-          <strong>語音訊息</strong>
-          <button id="recBtn" onclick="toggleRecord()">開始錄音</button>
-          <span id="sttStatus" class="small"></span>
-        </div>
+      <div id="sidebar" style="width: 240px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; height: fit-content;">
+        <h4>🚀 線上使用者</h4>
+        <ul id="user-list" style="list-style: none; padding: 0; margin: 0; color: #e0f7fa;">
+        </ul>
       </div>
-
-      <div class="tool-box">
-        <div class="row">
-          <strong>圖片 / GIF 分享</strong>
-          <input type="file" id="imgPicker" accept="image/*" multiple>
-          <button onclick="sendPickedImages()">送出選取檔案</button>
-        </div>
-        <div id="dropzone">將圖片或 GIF 拖曳到此處上傳</div>
-      </div>
-    </div>
-
-    <ul id="messages"></ul>
-
-    <!-- 輸入列 + 反應預覽 -->
-    <div class="footer-row">
-      <div class="row" style="flex: 1 1 420px;">
-        <input id="msg" placeholder="輸入訊息並送出（輸入 '流星' 可觸發特效）" style="flex:1;">
-        <button onclick="sendMessage()">送出</button>
-      </div>
-      <div class="row small">提示：點擊訊息下的 👍 😂 ❤️ 🚀 可以送出表情反應</div>
-    </div>
-
-    <div class="row" style="margin-top:10px;">
-      <button onclick="leaveRoom()">退出房間</button>
-      <input id="newRoom" placeholder="新房間">
-      <button onclick="switchRoom()">切換房間</button>
     </div>
   </div>
 </div>
@@ -193,6 +205,24 @@ addEventListener('resize', () => { width = canvas.width = innerWidth; height = c
 let ws, nickname, room, avatar, customAvatar = "";
 const $ = (id) => document.getElementById(id);
 const messagesEl = $('messages');
+let typingTimer;
+const typingUsers = new Set();
+
+// ===== 鍵盤輸入事件 =====
+$('msg').addEventListener('keydown', () => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    clearTimeout(typingTimer);
+    ws.send(JSON.stringify({ type: 'typing_start', nickname, room }));
+});
+
+$('msg').addEventListener('keyup', () => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+        ws.send(JSON.stringify({ type: 'typing_stop', nickname, room }));
+    }, 2000); // 2秒後發送停止
+});
+
 
 // 產生用於訊息關聯的 ID
 const genId = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
@@ -228,9 +258,21 @@ function sendMessage() {
   const content = $('msg').value.trim();
   if (!content) return;
   const id = genId();
+  
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    clearTimeout(typingTimer);
+    ws.send(JSON.stringify({ type: 'typing_stop', nickname, room }));
+  }
+
   ws.send(JSON.stringify({ type: 'chat', id, nickname, room, avatar, content }));
   $('msg').value = '';
 }
+
+$('msg').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
 
 // ===== 投票（沿用你原有的概念）=====
 function sendVote(option) {
@@ -388,18 +430,65 @@ function handleIncoming(msg) {
       $('quizStatus').textContent = `🏆 得主：${msg.nickname}，答案：${msg.answer}`;
       addSystemMessage(`🏆 【搶答結果】${msg.nickname} 率先答對！答案：${msg.answer}`);
       break;
+    case 'user_list':
+      renderUserList(JSON.parse(msg.content));
+      break;
+    case 'typing_start':
+      if (msg.nickname === nickname) return;
+      typingUsers.add(msg.nickname);
+      updateTypingIndicator();
+      break;
+    case 'typing_stop':
+      if (msg.nickname === nickname) return;
+      typingUsers.delete(msg.nickname);
+      updateTypingIndicator();
+      break;
     default:
       // 其他自定型別...
       break;
   }
 }
 
+function updateTypingIndicator() {
+  const indicator = $('typing-indicator');
+  if (typingUsers.size === 0) {
+    indicator.textContent = '';
+    return;
+  }
+  
+  const users = Array.from(typingUsers);
+  if (users.length === 1) {
+    indicator.textContent = `${users[0]} is typing...`;
+  } else if (users.length === 2) {
+    indicator.textContent = `${users.join(' and ')} are typing...`;
+  } else {
+    indicator.textContent = 'Several people are typing...';
+  }
+}
+
 // ===== UI 渲染 =====
+function renderUserList(users) {
+  const userListEl = $('user-list');
+  userListEl.innerHTML = '';
+  if (users && users.length > 0) {
+    users.forEach(user => {
+      const li = document.createElement('li');
+      li.textContent = user;
+      li.style.padding = '5px';
+      li.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+      userListEl.appendChild(li);
+    });
+  }
+}
 function renderChatMessage(msg) {
   const li = document.createElement('li'); li.className = 'message'; li.dataset.id = msg.id || genId();
   const img = document.createElement('img'); img.className = 'avatar'; img.src = msg.avatar || ''; li.appendChild(img);
   const body = document.createElement('div'); body.className = 'msg-body';
   const header = document.createElement('div'); header.className = 'msg-header'; header.textContent = `[${msg.nickname}]`;
+  const timestamp = document.createElement('span');
+  timestamp.style.fontSize = '0.8em'; timestamp.style.opacity = '0.7'; timestamp.style.marginLeft = '8px';
+  timestamp.textContent = msg.timestamp || '';
+  header.appendChild(timestamp);
   const content = document.createElement('div'); content.className = 'msg-content'; content.textContent = msg.content || '';
   const bar = document.createElement('div'); bar.className = 'reaction-bar';
   REACTIONS.forEach(em => {
@@ -425,6 +514,10 @@ function renderImageMessage(msg) {
   const imgA = document.createElement('img'); imgA.className = 'avatar'; imgA.src = msg.avatar || ''; li.appendChild(imgA);
   const body = document.createElement('div'); body.className = 'msg-body';
   const header = document.createElement('div'); header.className = 'msg-header'; header.textContent = `[${msg.nickname}] 分享了圖片 ${msg.name || ''}`;
+  const timestamp = document.createElement('span');
+  timestamp.style.fontSize = '0.8em'; timestamp.style.opacity = '0.7'; timestamp.style.marginLeft = '8px';
+  timestamp.textContent = msg.timestamp || '';
+  header.appendChild(timestamp);
   const media = document.createElement('img'); media.className = 'msg-media'; media.src = msg.dataUrl; media.alt = msg.name || 'image';
   media.onclick = () => showModal(media.src);
   const bar = document.createElement('div'); bar.className = 'reaction-bar';
@@ -444,6 +537,10 @@ function renderVoiceMessage(msg) {
   const imgA = document.createElement('img'); imgA.className = 'avatar'; imgA.src = msg.avatar || ''; li.appendChild(imgA);
   const body = document.createElement('div'); body.className = 'msg-body';
   const header = document.createElement('div'); header.className = 'msg-header'; header.textContent = `[${msg.nickname}] 語音訊息`;
+  const timestamp = document.createElement('span');
+  timestamp.style.fontSize = '0.8em'; timestamp.style.opacity = '0.7'; timestamp.style.marginLeft = '8px';
+  timestamp.textContent = msg.timestamp || '';
+  header.appendChild(timestamp);
   const audio = document.createElement('audio'); audio.controls = true; audio.src = msg.audio;
   const transcript = document.createElement('div'); transcript.className = 'msg-content'; transcript.style.opacity = '0.85';
   transcript.textContent = msg.transcript ? `STT：${msg.transcript}` : '';

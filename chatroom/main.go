@@ -44,6 +44,7 @@ type Message struct {
 	Y          float64        `json:"y,omitempty"`
 	Color      string         `json:"color,omitempty"`
 	LineWidth  int            `json:"lineWidth,omitempty"`
+	Password   string         `json:"password,omitempty"`
 }
 
 // (Quiz, Vote, GameScore, DrawState Structs 與上一版相同)
@@ -81,6 +82,9 @@ var (
 
 	drawStates     = make(map[string]*DrawState)
 	drawStateMutex sync.Mutex
+
+	roomPasswords      = make(map[string]string)
+	roomPasswordsMutex sync.Mutex
 
 	roomsMutex   sync.Mutex
 	historyMutex sync.Mutex
@@ -223,6 +227,33 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			isSwitchingToGame := strings.HasPrefix(newRoom, "_")
 			isSwitchingFromGame := strings.HasPrefix(oldRoom, "_")
 
+			// Password Check
+			roomPasswordsMutex.Lock()
+			expectedPassword, passwordRequired := roomPasswords[newRoom]
+			isNewRoom := rooms[newRoom] == nil
+			roomPasswordsMutex.Unlock()
+
+			if passwordRequired {
+				if msg.Password != expectedPassword {
+					errorMsg := Message{Type: "wrong_password", Room: newRoom}
+					if msg.Password == "" {
+						errorMsg.Type = "password_required"
+					}
+					client.mu.Lock()
+					if err := ws.WriteJSON(errorMsg); err != nil {
+						log.Println("WriteJSON error (password error):", err)
+					}
+					client.mu.Unlock()
+					continue // Stop processing the switch
+				}
+			} else if isNewRoom && msg.Password != "" {
+				// This is a new room and the user is setting a password
+				roomPasswordsMutex.Lock()
+				roomPasswords[newRoom] = msg.Password
+				roomPasswordsMutex.Unlock()
+			}
+
+
 			if !isSwitchingFromGame {
 				leaveMsg := Message{
 					Type: "leave", Room: oldRoom, Content: client.nickname + " 離開了聊天室", Timestamp: time.Now().Format("15:04"),
@@ -234,6 +265,10 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			delete(rooms[oldRoom], client)
 			if len(rooms[oldRoom]) == 0 {
 				delete(rooms, oldRoom)
+				// Also remove password if room is empty
+				roomPasswordsMutex.Lock()
+				delete(roomPasswords, oldRoom)
+				roomPasswordsMutex.Unlock()
 			}
 			client.room = newRoom
 			if rooms[newRoom] == nil {
@@ -251,7 +286,6 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 				historyMutex.Lock()
 				if history[client.room] != nil {
 					for _, hmsg := range history[client.room] {
-						// ✨ (BUG 1) 加上鎖
 						client.mu.Lock()
 						if err := client.conn.WriteJSON(hmsg); err != nil {
 							log.Println("Switch history write error:", err)
@@ -267,6 +301,14 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 					Type: "join", Room: newRoom, Content: client.nickname + " 加入了聊天室", Timestamp: time.Now().Format("15:04"),
 				}
 				broadcast <- joinMsg
+
+				// Send confirmation to the switching client
+				confirmMsg := Message{Type: "switch_success", Room: newRoom}
+				client.mu.Lock()
+				if err := ws.WriteJSON(confirmMsg); err != nil {
+					log.Println("WriteJSON error (switch_success):", err)
+				}
+				client.mu.Unlock()
 			}
 			continue
 		}

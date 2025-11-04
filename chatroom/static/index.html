@@ -15,7 +15,7 @@ canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; }
 h2, h3 { margin: 8px 0 12px; }
 input, button, textarea, label.button { font-size: 1em; padding: 10px 12px; margin: 6px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: #fff; }
 button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: pointer; }
-input[type="text"] { width: 95%; } /* ✨ (功能 1) Modal input 寬度 */
+.modal input[type="text"] { width: 95%; } /* ✨ (功能 1) Modal input 寬度 */
 
 /* ... (其他 CSS 與 Response 11 相同) ... */
 .row { display: flex; align-items: center; }
@@ -168,11 +168,13 @@ input[type="text"] { width: 95%; } /* ✨ (功能 1) Modal input 寬度 */
       <h3>房間列表</h3>
       <ul id="room-list"></ul>
       <div class="col">
-        <input type="text" id="newRoomInput" placeholder="新房間名稱...">
-        <button onclick="createRoom()">+ 建立房間</button>
+        <input type="text" id="newRoomInput" placeholder="房間名稱...">
+        <input type="password" id="newRoomPassword" placeholder="密碼 (可選)...">
+        <button onclick="createRoom()">+ 建立或加入房間</button>
       </div>
     </div>
     <div id="main-chat">
+      <h3 id="room-name-header" style="margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">lobby</h3>
       <ul id="messages"></ul>
       <div class="toolbar">
         <label for="imageInput" class="button" id="image-label">🖼️ 圖片</label>
@@ -277,6 +279,7 @@ const messagesEl = document.getElementById('messages');
 const messageInput = document.getElementById('messageInput');
 const roomListEl = document.getElementById('room-list');
 const newRoomInput = document.getElementById('newRoomInput');
+const newRoomPassword = document.getElementById('newRoomPassword');
 const imageInput = document.getElementById('imageInput');
 const voiceInput = document.getElementById('voiceInput');
 const voiceBtn = document.getElementById('voiceBtn');
@@ -292,6 +295,7 @@ let ws;
 let myNickname = '';
 let myAvatar = '';
 let currentRoom = 'lobby';
+let roomInfo = {};
 let quizAnswer = ''; 
 let mediaRecorder;
 let audioChunks = [];
@@ -375,13 +379,28 @@ function handleIncoming(msg) {
       document.getElementById('online-count').textContent = msg.content;
       break;
     case 'room_list':
-      updateRoomList(msg.options); 
+      updateRoomList(msg.roomInfo);
       break;
-    case 'history':
-      messagesEl.innerHTML = '';
-      (msg.messages || []).forEach(m => renderMessage(m));
-      addSystemMessage(`已加入房間: ${currentRoom}`);
+    case 'password_required':
+      const pw = prompt(`房間 ${msg.room} 需要密碼：`);
+      if (pw) {
+        switchRoom(msg.room, false, pw);
+      }
       break;
+    case 'wrong_password':
+      alert(`房間 ${msg.room} 的密碼錯誤！`);
+      break;
+    case 'switch_success':
+      currentRoom = msg.room;
+      document.getElementById('room-name-header').textContent = currentRoom;
+      messagesEl.innerHTML = ''; // Clear messages from old room
+      addSystemMessage(`成功加入房間: ${currentRoom}`);
+      document.querySelectorAll('#room-list li').forEach(li => {
+        li.classList.toggle('active', li.dataset.room === currentRoom);
+      });
+      break;
+    case 'chat': case 'image': case 'voice':
+      renderMessage(msg); break;
     case 'chat': case 'image': case 'voice':
       renderMessage(msg); break;
     case 'join': case 'leave': case 'switch':
@@ -481,31 +500,50 @@ document.getElementById('cancel-audio').onclick = () => {
   messageInput.placeholder = '輸入訊息...';
   document.getElementById('image-label').style.display = 'flex';
 };
-function switchRoom(room, firstTime = false) {
+function switchRoom(room, firstTime = false, password = '') {
   if (room === currentRoom && !firstTime) return;
-  currentRoom = room;
+  
+  // Don't set currentRoom here, wait for server confirmation
   ws.send(JSON.stringify({
     type: 'switch', room: room, nickname: myNickname,
-    avatar: myAvatar, timestamp: new Date().toISOString()
+    avatar: myAvatar, timestamp: new Date().toISOString(),
+    password: password
   }));
-  document.querySelectorAll('#room-list li').forEach(li => {
-    li.classList.toggle('active', li.dataset.room === room);
-  });
 }
 function createRoom() {
   const roomName = newRoomInput.value.trim().toLowerCase().replace(/ /g, '-');
-  if (roomName) { switchRoom(roomName); newRoomInput.value = ''; }
+  const password = newRoomPassword.value.trim();
+  if (roomName) { 
+    switchRoom(roomName, false, password); 
+    newRoomInput.value = ''; 
+    newRoomPassword.value = '';
+  }
 }
+function joinRoom(room) {
+  if (room === currentRoom) return;
+  if (roomInfo[room]) {
+    const pw = prompt(`房間 ${room} 需要密碼：`);
+    // If user cancels prompt, pw will be null
+    if (pw !== null) {
+      switchRoom(room, false, pw);
+    }
+  } else {
+    switchRoom(room);
+  }
+}
+
 function updateRoomList(rooms) {
+  roomInfo = rooms;
   roomListEl.innerHTML = '';
-  rooms.forEach(room => {
+  for (const room in rooms) {
+    const isPrivate = rooms[room];
     const li = document.createElement('li');
     li.dataset.room = room;
-    li.textContent = room;
+    li.textContent = room + (isPrivate ? ' 🔒' : '');
     li.className = (room === currentRoom) ? 'active' : '';
-    li.onclick = () => switchRoom(room);
+    li.onclick = () => joinRoom(room);
     roomListEl.appendChild(li);
-  });
+  }
 }
 function renderMessage(msg) {
   const li = document.createElement('li');

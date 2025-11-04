@@ -131,6 +131,48 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
   margin-bottom: 5px;
   font-weight: bold;
 }
+/* --- 獨特鼠標樣式 (最終修復版) --- */
+
+/* 1. 設定整個網頁的「默認」鼠標 */
+html, body {
+  cursor: url("my_cursor.cur"), auto;
+}
+
+/* 2. 設定「可點擊」元素 (按鈕等) 的手型鼠標 */
+/*
+ * 這是最重要的修改：
+ * 我們同時設定了元素本身 (button) 和它的懸停狀態 (button:hover)，
+ * 並加上 !important 來確保它絕對優先。
+*/
+button,
+label.button,
+.avatar-select,
+#room-list li,
+.vote-option,
+.msg-emoji-picker button,
+.modal-close-btn,
+#cancel-image,
+#cancel-audio,
+input[type="color"],
+button:hover,
+label.button:hover,
+.avatar-select:hover,
+#room-list li:hover,
+.vote-option:hover,
+.msg-emoji-picker button:hover {
+  /* * !important 會覆蓋掉您檔案中任何其他地方的 'cursor: pointer' 設置
+   */
+  cursor: url("my_pointer.cur"), pointer !important; 
+}
+
+/* 3. 設定文字輸入框的鼠標 (使用 my_text.cur) */
+input[type="text"],
+input[type="number"],
+textarea {
+  cursor: url("my_text.cur"), text;
+}
+/* --- 鼠標樣式 結束 --- */
+
 </style>
 </head>
 <body>

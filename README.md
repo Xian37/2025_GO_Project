@@ -10,6 +10,7 @@ This is a program that can let you set up your own chatroom server on your local
     - Guess number
     - Draw and Guess
     - Riddle
+- Intuitive UI.
 
 ## How to Use
 1. Install Golang.
@@ -18,8 +19,7 @@ This is a program that can let you set up your own chatroom server on your local
 4. Open `http://localhost:8080/` in the browser and enjoy your time.
 
 ## Future Works
-- Show all rooms on the left and can enter them by clicking.
-- Partition the codes in to different folders to make maintenance easier.
+- None for now.
 
 ## Unfixed Bugs
-- People will get kicked out the server when starting to draw stuff.
+- None for now.

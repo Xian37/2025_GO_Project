@@ -332,7 +332,7 @@ function startDrawing(e) {
     x: x / canvas.width,
     y: y / canvas.height,
     color: colorPicker.value,
-    lineWidth: lineWidth.value
+    lineWidth: parseInt(lineWidth.value, 10) // <-- 
   };
   ws.send(JSON.stringify(msg));
   drawOnCanvas(msg);

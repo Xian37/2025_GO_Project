@@ -208,37 +208,37 @@ textarea {
     <div id="sidebar">
       <div id="online-status">🟢 在線：<span id="online-count">0</span> 人</div>
       <button onclick="logout()" style="width:100%; margin-bottom:15px;">登出</button>
+      <button onclick="showCreateRoomModal()" style="width:100%; margin-bottom:15px;">
+        ＋ 建立或加入房間
+      </button>
       <h3>房間列表</h3>
-      <ul id="room-list"></ul>
-      <div class="col">
-        <input type="text" id="newRoomInput" placeholder="房間名稱...">
-        <input type="password" id="newRoomPassword" placeholder="密碼 (可選)...">
-        <button onclick="createRoom()">+ 建立或加入房間</button>
+      <ul id="room-list">
+        </ul>
       </div>
-    </div>
-    <div id="main-chat">
-      <h3 id="room-name-header" style="margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">lobby</h3>
-      <ul id="messages"></ul>
-      <div class="toolbar">
-        <label for="imageInput" class="button" id="image-label">🖼️ 圖片</label>
-        <input type="file" id="imageInput" accept="image/*">
-        <label for="voiceInput" class="button" id="voiceBtn">🎤 語音 (按住)</label>
-        <input type="checkbox" id="voiceInput">
-        <span id="rec-status"></span>
-        <button onclick="showQuizModal()">🧠 出題搶答</button>
-        <button onclick="showVoteModal()">📊 發起投票</button>
-      </div>
-      <div class="row" id="chat-controls">
-        <input type="text" id="messageInput" placeholder="輸入訊息...">
-        <div id="image-preview-container" class="attachment-preview">
-          <img id="image-preview" src="" style="max-height: 40px; border-radius: 4px;">
-          <button id="cancel-image">&times;</button>
+      <div id="main-chat">
+        <h3 id="room-name-header" style="margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">lobby</h3>
+        <ul id="messages"></ul>
+        <div class="toolbar">
+          <label for="imageInput" class="button" id="image-label">🖼️ 圖片</label>
+          <input type="file" id="imageInput" accept="image/*">
+          <label for="voiceInput" class="button" id="voiceBtn">🎤 語音 (按住)</label>
+          <input type="checkbox" id="voiceInput">
+          <span id="rec-status"></span>
+          <button onclick="showQuizModal()">🧠 出題搶答</button>
+          <button onclick="showVoteModal()">📊 發起投票</button>
         </div>
-        <div id="audio-preview-container" class="attachment-preview">
-          <span>🎤 語音已附加</span>
-          <button id="cancel-audio">&times;</button>
+        <div class="row" id="chat-controls">
+          <input type="text" id="messageInput" placeholder="輸入訊息...">
+          <div id="image-preview-container" class="attachment-preview">
+            <img id="image-preview" src="" style="max-height: 40px; border-radius: 4px;">
+            <button id="cancel-image">&times;</button>
+          </div>
+          <div id="audio-preview-container" class="attachment-preview">
+            <span>🎤 語音已附加</span>
+            <button id="cancel-audio">&times;</button>
+          </div>
+          <button onclick="sendMsg()">🚀 送出</button>
         </div>
-        <button onclick="sendMsg()">🚀 送出</button>
       </div>
     </div>
   </div>
@@ -264,6 +264,16 @@ textarea {
   <label for="vote-options">選項 (用逗號 , 分隔)：</label>
   <input type="text" id="vote-options" placeholder="例如：披薩, 漢堡, 義大利麵">
   <button onclick="submitVote()" style="margin-top: 15px; width: 100%;">發送投票</button>
+</div>
+
+<div id="create-room-modal" class="modal">
+  <button class="modal-close-btn" onclick="closeModals()">&times;</button>
+  <h4>+ 建立或加入房間</h4>
+  <label for="modal-room-name">房間名稱：</label>
+  <input type="text" id="modal-room-name" placeholder="輸入房間名稱...">
+  <label for="modal-room-pass">密碼 (可選)：</label>
+  <input type="password" id="modal-room-pass" placeholder="為您的房間設定密碼...">
+  <button onclick="submitCreateRoom()" style="margin-top: 15px; width: 100%;">確認</button>
 </div>
 
 <script>
@@ -332,6 +342,7 @@ const recStatus = document.getElementById('rec-status');
 const modalBackdrop = document.getElementById('modal-backdrop');
 const quizModal = document.getElementById('quiz-modal');
 const voteModal = document.getElementById('vote-modal');
+const createRoomModal = document.getElementById('create-room-modal');
 
 // (狀態變數與上一版相同)
 let ws;
@@ -572,32 +583,68 @@ function switchRoom(room, firstTime = false, password = '') {
     password: password
   }));
 }
-function createRoom() {
-  const roomName = newRoomInput.value.trim().toLowerCase().replace(/ /g, '-');
-  const password = newRoomPassword.value.trim();
+
+function showCreateRoomModal() {
+  modalBackdrop.style.display = 'block';
+  createRoomModal.style.display = 'block';
+  document.getElementById('modal-room-name').focus();
+}
+
+function closeModals() {
+  modalBackdrop.style.display = 'none';
+  quizModal.style.display = 'none';
+  voteModal.style.display = 'none';
+  createRoomModal.style.display = 'none';
+}
+
+function submitCreateRoom() {
+  const roomName = document.getElementById('modal-room-name').value.trim().toLowerCase().replace(/ /g, '-');
+  const password = document.getElementById('modal-room-pass').value.trim();
   if (roomName) { 
     switchRoom(roomName, false, password); 
-    newRoomInput.value = ''; 
-    newRoomPassword.value = '';
+    closeModals();
+    document.getElementById('modal-room-name').value = '';
+    document.getElementById('modal-room-pass').value = '';
+  } else {
+    alert("請輸入房間名稱！");
   }
 }
+
 function joinRoom(room) {
-  if (room === currentRoom) return;
-  if (roomInfo[room]) {
-    const pw = prompt(`房間 ${room} 需要密碼：`);
-    // If user cancels prompt, pw will be null
-    if (pw !== null) {
-      switchRoom(room, false, pw);
+  if (room === currentRoom && room !== 'lobby') return;
+
+  if (roomInfo.hasOwnProperty(room)) {
+    if (roomInfo[room]) { 
+      const pw = prompt(`房間 ${room} 需要密碼：`);
+      if (pw !== null) {
+        switchRoom(room, false, pw);
+      }
+    } else {
+      switchRoom(room, false, ''); 
     }
   } else {
-    switchRoom(room);
+    alert(`房間 ${room} 已不存在，頁面將會重新整理。`);
+    location.reload();
   }
 }
 
 function updateRoomList(rooms) {
   roomInfo = rooms;
   roomListEl.innerHTML = '';
-  for (const room in rooms) {
+ 
+  if (roomInfo['lobby'] !== undefined) {
+      const lobbyLi = document.createElement('li');
+      lobbyLi.dataset.room = 'lobby';
+      lobbyLi.textContent = 'lobby';
+      lobbyLi.className = ('lobby' === currentRoom) ? 'active' : '';
+      lobbyLi.onclick = () => joinRoom('lobby');
+      roomListEl.appendChild(lobbyLi);
+  }
+
+  const roomNames = Object.keys(rooms);
+  const sortedRooms = roomNames.filter(room => room !== 'lobby').sort();
+
+  sortedRooms.forEach(room => {
     const isPrivate = rooms[room];
     const li = document.createElement('li');
     li.dataset.room = room;
@@ -605,8 +652,9 @@ function updateRoomList(rooms) {
     li.className = (room === currentRoom) ? 'active' : '';
     li.onclick = () => joinRoom(room);
     roomListEl.appendChild(li);
-  }
+  });
 }
+
 function renderMessage(msg) {
   const li = document.createElement('li');
   li.className = 'message';
@@ -748,6 +796,7 @@ function closeModals() {
   modalBackdrop.style.display = 'none';
   quizModal.style.display = 'none';
   voteModal.style.display = 'none';
+  createRoomModal.style.display = 'none';
 }
 function submitQuiz() {
   const question = document.getElementById('quiz-question').value;

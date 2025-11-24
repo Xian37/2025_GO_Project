@@ -15,6 +15,23 @@ import (
 
 const leaderboardFile = "leaderboard.json"
 
+// safeWriteJSON safely writes JSON to a client, ignoring closed connections
+func safeWriteJSON(client *models.Client, msg models.Message) bool {
+	client.Mu.Lock()
+	defer client.Mu.Unlock()
+
+	if err := client.Conn.WriteJSON(msg); err != nil {
+		// Only log if it's not a typical disconnect error
+		if !strings.Contains(err.Error(), "use of closed network connection") &&
+			!strings.Contains(err.Error(), "connection was aborted") &&
+			!strings.Contains(err.Error(), "broken pipe") {
+			log.Printf("WriteJSON error: %v", err)
+		}
+		return false
+	}
+	return true
+}
+
 // StateService
 type StateService struct {
 	Rooms     map[string]map[*models.Client]bool
@@ -173,13 +190,9 @@ func (s *StateService) SendHistory(client *models.Client) {
 
 	if ok && len(history) > 0 {
 		for _, msg := range history {
-			client.Mu.Lock()
-			if err := client.Conn.WriteJSON(msg); err != nil {
-				log.Println("History write error:", err)
-				client.Mu.Unlock()
+			if !safeWriteJSON(client, msg) {
 				break
 			}
-			client.Mu.Unlock()
 		}
 	}
 }
@@ -201,11 +214,7 @@ func (s *StateService) BroadcastToRoom(msg models.Message) {
 	}
 
 	for client := range clientsInRoom {
-		client.Mu.Lock()
-		if err := client.Conn.WriteJSON(msg); err != nil {
-			log.Println("WriteJSON error (BroadcastToRoom):", err)
-		}
-		client.Mu.Unlock()
+		safeWriteJSON(client, msg)
 	}
 }
 
@@ -222,11 +231,7 @@ func (s *StateService) BroadcastToRoomExcept(msg models.Message, except *models.
 		if client == except {
 			continue
 		}
-		client.Mu.Lock()
-		if err := client.Conn.WriteJSON(msg); err != nil {
-			log.Println("WriteJSON error (BroadcastToRoomExcept):", err)
-		}
-		client.Mu.Unlock()
+		safeWriteJSON(client, msg)
 	}
 }
 
@@ -249,11 +254,7 @@ func (s *StateService) BroadcastOnlineCount() {
 	}
 
 	for client := range allClients {
-		client.Mu.Lock()
-		if err := client.Conn.WriteJSON(msg); err != nil {
-			log.Println("WriteJSON error (online_count):", err)
-		}
-		client.Mu.Unlock()
+		safeWriteJSON(client, msg)
 	}
 }
 
@@ -294,11 +295,7 @@ func (s *StateService) BroadcastRoomList() {
 	s.RoomsMutex.RUnlock()
 
 	for _, client := range clientsToWrite {
-		client.Mu.Lock()
-		if err := client.Conn.WriteJSON(msg); err != nil {
-			log.Println("WriteJSON error (room_list):", err)
-		}
-		client.Mu.Unlock()
+		safeWriteJSON(client, msg)
 	}
 }
 

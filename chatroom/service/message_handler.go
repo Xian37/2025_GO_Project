@@ -67,11 +67,7 @@ func (s *StateService) handleDraw(msg models.Message) {
 	s.RoomsMutex.RUnlock()
 
 	for _, client := range clientsToWrite {
-		client.Mu.Lock()
-		if err := client.Conn.WriteJSON(msg); err != nil {
-			log.Println("WriteJSON error (draw broadcast):", err)
-		}
-		client.Mu.Unlock()
+		safeWriteJSON(client, msg)
 	}
 }
 

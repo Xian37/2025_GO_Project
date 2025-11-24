@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>GO GO GO Chatroom</title>
+<!-- Markdown 和程式碼高亮支援 -->
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
 <style>
 /* (星空背景 CSS) */
 html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #e0f7fa; }
@@ -90,6 +94,147 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 .attachment-preview button {
   background:none; border:none; color:red; font-size: 1.5em; 
   padding: 0 5px; cursor: pointer; margin: 0;
+}
+
+/* 引用訊息樣式 */
+.reply-preview {
+  display: none;
+  background: rgba(135, 206, 250, 0.2);
+  border-left: 3px solid #87CEFA;
+  padding: 8px 12px;
+  margin: 0 10px 10px 10px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  position: relative;
+}
+.reply-preview .reply-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 0;
+  margin: 0;
+}
+.reply-preview .reply-author {
+  font-weight: bold;
+  color: #87CEFA;
+  margin-bottom: 3px;
+}
+.reply-preview .reply-content {
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+.quoted-message {
+  background: rgba(135, 206, 250, 0.15);
+  border-left: 3px solid #87CEFA;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+.quoted-message .quoted-author {
+  font-weight: bold;
+  color: #87CEFA;
+  margin-bottom: 2px;
+}
+.quoted-message .quoted-content {
+  opacity: 0.8;
+}
+.msg-reply-btn {
+  display: none;
+  position: absolute;
+  top: -8px;
+  right: 50px;
+  background: rgba(135, 206, 250, 0.3);
+  border: 1px solid rgba(135, 206, 250, 0.5);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  cursor: pointer;
+  z-index: 5;
+}
+.message:hover .msg-reply-btn {
+  display: block;
+}
+.msg-reply-btn:hover {
+  background: rgba(135, 206, 250, 0.5);
+}
+
+/* Markdown 樣式 */
+.msg-content h1, .msg-content h2, .msg-content h3 {
+  margin: 8px 0 6px 0;
+  line-height: 1.3;
+}
+.msg-content h1 { font-size: 1.5em; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 4px; }
+.msg-content h2 { font-size: 1.3em; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 3px; }
+.msg-content h3 { font-size: 1.15em; }
+.msg-content ul, .msg-content ol {
+  margin: 6px 0;
+  padding-left: 25px;
+}
+.msg-content li {
+  margin: 3px 0;
+}
+.msg-content blockquote {
+  border-left: 3px solid rgba(255,255,255,0.3);
+  margin: 8px 0;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+.msg-content code {
+  background: rgba(0,0,0,0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+.msg-content pre {
+  background: rgba(0,0,0,0.4);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.msg-content pre code {
+  background: none;
+  padding: 0;
+}
+.msg-content a {
+  color: #87CEFA;
+  text-decoration: none;
+}
+.msg-content a:hover {
+  text-decoration: underline;
+}
+.msg-content table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  width: 100%;
+}
+.msg-content table th,
+.msg-content table td {
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 10px;
+  text-align: left;
+}
+.msg-content table th {
+  background: rgba(255,255,255,0.1);
+  font-weight: bold;
+}
+.msg-content hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  margin: 10px 0;
 }
 
 /* ✨ (功能 1) Modal CSS */
@@ -227,8 +372,14 @@ textarea {
           <span id="interim-result" style="margin-left: 10px; font-style: italic; opacity: 0.7;"></span>
           <button onclick="showVoiceSettingsModal()">⚙️ 語音設定</button>
           <button onclick="toggleTTS()" id="tts-toggle">🔊 朗讀</button>
+          <button onclick="showMarkdownHelp()">📝 Markdown</button>
           <button onclick="showQuizModal()">🧠 出題搶答</button>
           <button onclick="showVoteModal()">📊 發起投票</button>
+        </div>
+        <div id="reply-preview" class="reply-preview">
+          <button class="reply-close" onclick="cancelReply()">×</button>
+          <div class="reply-author"></div>
+          <div class="reply-content"></div>
         </div>
         <div class="row" id="chat-controls">
           <input type="text" id="messageInput" placeholder="輸入訊息...">
@@ -336,6 +487,27 @@ textarea {
   <button onclick="saveVoiceSettings()" style="margin-top: 10px; width: 100%; background: rgba(135, 206, 250, 0.4);">💾 儲存設定</button>
 </div>
 
+<div id="markdown-help-modal" class="modal">
+  <button class="modal-close-btn" onclick="closeModals()">×</button>
+  <h4>📝 Markdown 語法說明</h4>
+  <div style="max-height: 400px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+    <p><strong># 標題</strong> → 大標題</p>
+    <p><strong>## 次標題</strong> → 次標題</p>
+    <p><strong>**粗體**</strong> → <strong>粗體</strong></p>
+    <p><strong>*斜體*</strong> → <em>斜體</em></p>
+    <p><strong>~~刪除線~~</strong> → <del>刪除線</del></p>
+    <p><strong>- 項目</strong> → 無序列表</p>
+    <p><strong>1. 項目</strong> → 有序列表</p>
+    <p><strong>[連結](網址)</strong> → 超連結</p>
+    <p><strong>> 引用</strong> → 引用文字</p>
+    <p><strong>`程式碼`</strong> → 行內程式碼</p>
+    <p><strong>```程式碼區塊```</strong> → 程式碼區塊</p>
+    <hr style="margin: 15px 0;">
+    <p style="font-size: 0.9em; opacity: 0.8;">💡 提示：訊息會自動渲染 Markdown 格式</p>
+  </div>
+  <button onclick="closeModals()" style="margin-top: 15px; width: 100%; background: rgba(135, 206, 250, 0.4);">✓ 知道了</button>
+</div>
+
 <script>
 // (星空 JS 與上一版相同)
 const canvas = document.getElementById('galaxy');
@@ -419,6 +591,9 @@ let audioChunks = [];
 let imageToSend = null;
 let audioToSend = null; 
 let audioTranscript = null;
+
+// 引用訊息變數
+let replyToMessage = null;
 
 // 語音設定變數
 let voiceLang = localStorage.getItem('voiceLang') || 'cmn-Hant-TW';
@@ -589,23 +764,32 @@ function handleIncoming(msg) {
 function sendMsg() {
   const content = messageInput.value.trim();
   if (imageToSend) {
-    ws.send(JSON.stringify({
+    const msgData = {
       type: 'image', room: currentRoom, nickname: myNickname, avatar: myAvatar,
       content: imageToSend, timestamp: new Date().toISOString()
-    }));
-    document.getElementById('cancel-image').onclick(); 
+    };
+    if (replyToMessage) msgData.replyTo = replyToMessage;
+    ws.send(JSON.stringify(msgData));
+    document.getElementById('cancel-image').onclick();
+    cancelReply();
   } else if (audioToSend) {
-    ws.send(JSON.stringify({
+    const msgData = {
       type: 'voice', room: currentRoom, nickname: myNickname, avatar: myAvatar,
       content: audioToSend, transcript: content, timestamp: new Date().toISOString()
-    }));
+    };
+    if (replyToMessage) msgData.replyTo = replyToMessage;
+    ws.send(JSON.stringify(msgData));
     document.getElementById('cancel-audio').onclick();
+    cancelReply();
   } else if (content) {
-    ws.send(JSON.stringify({
+    const msgData = {
       type: 'chat', room: currentRoom, nickname: myNickname, avatar: myAvatar,
       content: content, timestamp: new Date().toISOString()
-    }));
+    };
+    if (replyToMessage) msgData.replyTo = replyToMessage;
+    ws.send(JSON.stringify(msgData));
     messageInput.value = '';
+    cancelReply();
   }
 }
 messageInput.addEventListener('keydown', e => {
@@ -667,6 +851,8 @@ function closeModals() {
   createRoomModal.style.display = 'none';
   const voiceSettingsModal = document.getElementById('voice-settings-modal');
   if (voiceSettingsModal) voiceSettingsModal.style.display = 'none';
+  const markdownHelpModal = document.getElementById('markdown-help-modal');
+  if (markdownHelpModal) markdownHelpModal.style.display = 'none';
 }
 
 function submitCreateRoom() {
@@ -731,6 +917,9 @@ function renderMessage(msg) {
   const li = document.createElement('li');
   li.className = 'message';
   li.dataset.id = msg.timestamp;
+  li.dataset.nickname = msg.nickname;
+  li.dataset.content = msg.content || '';
+  
   const avatar = document.createElement('img');
   avatar.className = 'msg-avatar';
   if (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:')) {
@@ -746,11 +935,32 @@ function renderMessage(msg) {
   const body = document.createElement('div'); body.className = 'msg-body';
   const header = document.createElement('div'); header.className = 'msg-header';
   header.textContent = msg.nickname; body.appendChild(header);
+  
+  // 如果有引用的訊息，先顯示引用
+  if (msg.replyTo) {
+    const quotedDiv = document.createElement('div');
+    quotedDiv.className = 'quoted-message';
+    quotedDiv.innerHTML = `
+      <div class="quoted-author">@${msg.replyTo.nickname}</div>
+      <div class="quoted-content">${escapeHtml(msg.replyTo.content || '圖片/語音訊息')}</div>
+    `;
+    body.appendChild(quotedDiv);
+  }
+  
   const content = document.createElement('div'); content.className = 'msg-content';
   switch (msg.type) {
     case 'chat':
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      content.innerHTML = msg.content.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+      // 使用 Markdown 渲染
+      try {
+        content.innerHTML = marked.parse(msg.content);
+        // 高亮程式碼
+        content.querySelectorAll('pre code').forEach((block) => {
+          hljs.highlightElement(block);
+        });
+      } catch (e) {
+        // 如果 Markdown 解析失敗，降級為純文字
+        content.textContent = msg.content;
+      }
       break;
     case 'image':
       const img = document.createElement('img'); img.src = msg.content;
@@ -761,6 +971,13 @@ function renderMessage(msg) {
     case 'voice': renderVoiceMessage(content, msg); break;
   }
   body.appendChild(content);
+  
+  // 添加回覆按鈕
+  const replyBtn = document.createElement('button');
+  replyBtn.className = 'msg-reply-btn';
+  replyBtn.textContent = '↩️ 回覆';
+  replyBtn.onclick = () => setReplyTo(msg);
+  body.appendChild(replyBtn);
   const emojiPicker = document.createElement('div'); emojiPicker.className = 'msg-emoji-picker';
   const emojis = ['👍', '❤️', '😂', '😮', '😢'];
   emojis.forEach(emoji => {
@@ -1142,6 +1359,40 @@ function autoReadMessage(msg) {
   if (textToRead) {
     speakText(textToRead);
   }
+}
+
+// 設定引用訊息
+function setReplyTo(msg) {
+  replyToMessage = {
+    timestamp: msg.timestamp,
+    nickname: msg.nickname,
+    content: msg.content || (msg.type === 'image' ? '圖片' : '語音訊息')
+  };
+  
+  const replyPreview = document.getElementById('reply-preview');
+  replyPreview.style.display = 'block';
+  replyPreview.querySelector('.reply-author').textContent = `回覆 @${msg.nickname}`;
+  replyPreview.querySelector('.reply-content').textContent = replyToMessage.content;
+  messageInput.focus();
+}
+
+// 取消引用
+function cancelReply() {
+  replyToMessage = null;
+  document.getElementById('reply-preview').style.display = 'none';
+}
+
+// 顯示 Markdown 幫助
+function showMarkdownHelp() {
+  modalBackdrop.style.display = 'block';
+  document.getElementById('markdown-help-modal').style.display = 'block';
+}
+
+// HTML 轉義函數（防止 XSS）
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function checkExistingLogin() {

@@ -1005,25 +1005,42 @@ function login() {
 
 // ✨ (BUG 1) 移除錯誤的 JS
 // (initWS, handleIncoming, sendMsg 等函式與上一版相同)
+let reconnectInterval = 1000; // 初始重連間隔 1 秒
+let maxReconnectInterval = 30000; // 最大重連間隔 30 秒
+
 function initWS() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(`${proto}//${window.location.host}/ws`);
+  
   ws.onopen = () => {
     console.log('Connected to WS');
+    reconnectInterval = 1000; // 連線成功，重置重連間隔
+    document.getElementById('online-status').style.display = 'block'; // 顯示在線狀態
+    addSystemMessage('已連線到聊天室！');
     switchRoom(currentRoom, true);
   };
+  
   ws.onmessage = event => {
     const msg = JSON.parse(event.data);
     console.log('[DEBUG] Received message:', msg);
     handleIncoming(msg);
   };
+  
   ws.onclose = () => {
     console.log('Disconnected from WS');
-    addSystemMessage('連線已中斷，請重新整理頁面。');
+    document.getElementById('online-count').textContent = '0'; // 斷線時人數歸零
+    
+    // 嘗試自動重連
+    console.log(`Attempting to reconnect in ${reconnectInterval/1000} seconds...`);
+    setTimeout(initWS, reconnectInterval);
+    
+    // 指數退避：每次失敗等待時間加倍，直到最大值
+    reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval);
   };
+  
   ws.onerror = err => {
     console.error('WS Error:', err);
-    addSystemMessage('連線發生錯誤。');
+    ws.close(); // 錯誤時主動關閉以觸發重連
   };
 }
 

@@ -34,7 +34,7 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 #main-chat { flex-grow: 1; display: flex; flex-direction: column; padding-left: 20px; }
 #messages { flex-grow: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
 .message { display: flex; margin-bottom: 18px; align-items: flex-start; position: relative; }
-.msg-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
+.msg-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; flex-shrink: 0; background-color: rgba(255,255,255,0.1); }
 .msg-body { max-width: 70%; display: flex; flex-direction: column; position: relative; padding-right: 120px; }
 .msg-header { font-size: 0.9em; font-weight: bold; margin-bottom: 4px; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
 .msg-time { font-size: 0.85em; opacity: 0.6; font-weight: normal; margin-left: auto; }
@@ -48,6 +48,7 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 #login-window { text-align: center; }
 #avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px; justify-items: center; }
 .avatar-select { width: 50px; height: 50px; line-height: 50px; font-size: 28px; text-align: center; border-radius: 50%; cursor: pointer; opacity: 0.6; transition: all 0.2s; }
+.avatar-select.avatar-image { background-color: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); }
 .avatar-select:hover { opacity: 1; transform: scale(1.1); }
 .avatar-select.selected { opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px 2px #87CEFA; }
 .toolbar { display: flex; flex-wrap: wrap; margin-bottom: 10px; }
@@ -82,8 +83,9 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 }
 #login-window h2 { font-size: 2.2em; font-weight: 300; letter-spacing: 1px; margin-bottom: 5px; }
 #login-window p { font-size: 1.1em; opacity: 0.8; margin-bottom: 20px; }
-#avatar-grid { max-width: 400px; margin: 20px auto; }
+#avatar-grid { max-width: 500px; margin: 20px auto; }
 .avatar-select { width: 60px; height: 60px; line-height: 60px; font-size: 32px; }
+.avatar-select.avatar-image { border: 3px solid rgba(255,255,255,0.4); }
 #login-window #avatar-preview { width: 80px; height: 80px; margin-bottom: 15px; }
 #login-window input[type="text"] { width: 250px; text-align: center; font-size: 1.1em; }
 #login-window button { font-size: 1.1em; background: rgba(135, 206, 250, 0.4); font-weight: bold; color: #fff;}
@@ -809,30 +811,259 @@ textarea {
 </div>
 
 <script>
-// (星空 JS 與上一版相同)
+// 宇宙場景背景
 const canvas = document.getElementById('galaxy');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
+// 星星系統
 let stars = [];
-for (let i = 0; i < 800; i++) {
-  stars.push({ x: Math.random(), y: Math.random(), z: Math.random() });
-}
-function drawGalaxy() {
-  ctx.fillStyle = '#0a0a1a';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  let time = Date.now() * 0.0001;
-  stars.forEach(star => {
-    let x = (star.x - 0.5) * canvas.width * (2 - star.z) + Math.sin(time + star.z) * 100 * star.z;
-    let y = (star.y - 0.5) * canvas.height * (2 - star.z) + Math.cos(time + star.x) * 100 * star.z;
-    let r = (1 - star.z) * 1.5;
-    let a = (1 - star.z);
-    ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
+for (let i = 0; i < 1500; i++) {
+  stars.push({ 
+    x: Math.random(), 
+    y: Math.random(), 
+    z: Math.random(),
+    twinkle: Math.random() * Math.PI * 2,
+    color: Math.random() > 0.7 ? 'color' : 'white'
   });
-  ctx.restore();
+}
+
+// 行星系統
+let planets = [
+  { 
+    x: 0.2, y: 0.3, size: 80, color: '#ff6b35', // 火星般的紅色星球
+    speed: 0.02, angle: 0, distance: 150,
+    rings: false, moons: 1
+  },
+  { 
+    x: 0.7, y: 0.6, size: 120, color: '#4ecdc4', // 藍綠色星球
+    speed: 0.015, angle: Math.PI, distance: 200,
+    rings: true, moons: 2
+  },
+  { 
+    x: 0.5, y: 0.8, size: 60, color: '#ffe66d', // 金黃色星球
+    speed: 0.025, angle: Math.PI / 2, distance: 100,
+    rings: false, moons: 0
+  },
+  { 
+    x: 0.15, y: 0.7, size: 100, color: '#a8dadc', // 淡藍色氣態星球
+    speed: 0.01, angle: Math.PI * 1.5, distance: 180,
+    rings: true, moons: 3
+  }
+];
+
+// 星雲/星團效果
+let nebulae = [];
+for (let i = 0; i < 5; i++) {
+  nebulae.push({
+    x: Math.random(),
+    y: Math.random(),
+    size: 150 + Math.random() * 200,
+    color: ['#ff006e', '#8338ec', '#3a86ff', '#fb5607', '#06ffa5'][i],
+    opacity: 0.03 + Math.random() * 0.05,
+    drift: Math.random() * 0.01
+  });
+}
+
+// 流星系統
+let shootingStars = [];
+function createShootingStar() {
+  if (Math.random() < 0.015) {
+    shootingStars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height * 0.5,
+      length: 80 + Math.random() * 120,
+      speed: 8 + Math.random() * 12,
+      angle: Math.PI / 4 + Math.random() * Math.PI / 6,
+      opacity: 1
+    });
+  }
+}
+
+function drawGalaxy() {
+  const time = Date.now() / 1000;
+  
+  // 深邃的宇宙背景
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#000510');
+  gradient.addColorStop(0.3, '#0a0a2e');
+  gradient.addColorStop(0.7, '#1a0520');
+  gradient.addColorStop(1, '#0f0518');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // 繪製星雲
+  nebulae.forEach(nebula => {
+    const x = nebula.x * canvas.width + Math.sin(time * nebula.drift) * 50;
+    const y = nebula.y * canvas.height + Math.cos(time * nebula.drift * 0.7) * 30;
+    
+    const nebulaGradient = ctx.createRadialGradient(x, y, 0, x, y, nebula.size);
+    nebulaGradient.addColorStop(0, nebula.color + Math.floor(nebula.opacity * 255).toString(16).padStart(2, '0'));
+    nebulaGradient.addColorStop(0.5, nebula.color + '05');
+    nebulaGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = nebulaGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  });
+  
+  // 繪製星星
+  stars.forEach(star => {
+    const scale = (1 - star.z);
+    const x = star.x * canvas.width;
+    const y = star.y * canvas.height;
+    const size = scale * 2.5;
+    
+    const twinkle = Math.sin(time * 3 + star.twinkle) * 0.3 + 0.7;
+    ctx.globalAlpha = twinkle * scale;
+    
+    if (star.color === 'color') {
+      const hue = (star.x * 360 + time * 20) % 360;
+      ctx.fillStyle = `hsl(${hue}, 70%, 70%)`;
+    } else {
+      ctx.fillStyle = '#ffffff';
+    }
+    
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    if (size > 1.8) {
+      ctx.globalAlpha = twinkle * scale * 0.1;
+      ctx.beginPath();
+      ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    star.z += 0.0001;
+    if (star.z > 1) star.z = 0;
+  });
+  
+  ctx.globalAlpha = 1;
+  
+  // 繪製行星（降低亮度避免遮擋文字）
+  ctx.globalAlpha = 0.4; // 整體降低行星透明度
+  planets.forEach(planet => {
+    // 軌道運動
+    planet.angle += planet.speed * 0.016;
+    const baseX = planet.x * canvas.width;
+    const baseY = planet.y * canvas.height;
+    const orbitX = baseX + Math.cos(planet.angle) * planet.distance;
+    const orbitY = baseY + Math.sin(planet.angle) * planet.distance * 0.6;
+    
+    // 行星光照效果（降低色彩飽和度）
+    const planetGradient = ctx.createRadialGradient(
+      orbitX - planet.size * 0.3, orbitY - planet.size * 0.3, planet.size * 0.1,
+      orbitX, orbitY, planet.size
+    );
+    planetGradient.addColorStop(0, planet.color + '88'); // 降低亮度
+    planetGradient.addColorStop(0.7, planet.color + '44');
+    planetGradient.addColorStop(1, planet.color + '11');
+    
+    ctx.fillStyle = planetGradient;
+    ctx.beginPath();
+    ctx.arc(orbitX, orbitY, planet.size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 行星表面細節
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#00000033';
+    for (let i = 0; i < 5; i++) {
+      const spotAngle = (planet.angle + i * 1.3) % (Math.PI * 2);
+      const spotDist = planet.size * 0.4;
+      const spotX = orbitX + Math.cos(spotAngle) * spotDist;
+      const spotY = orbitY + Math.sin(spotAngle) * spotDist;
+      ctx.beginPath();
+      ctx.arc(spotX, spotY, planet.size * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    
+    // 行星光暈（大幅降低）
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    const glowGradient = ctx.createRadialGradient(orbitX, orbitY, planet.size, orbitX, orbitY, planet.size * 1.8);
+    glowGradient.addColorStop(0, planet.color);
+    glowGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGradient;
+    ctx.beginPath();
+    ctx.arc(orbitX, orbitY, planet.size * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // 行星環（降低不透明度）
+    if (planet.rings) {
+      ctx.save();
+      ctx.translate(orbitX, orbitY);
+      ctx.rotate(Math.PI / 6);
+      ctx.globalAlpha = 0.25;
+      
+      for (let r = 0; r < 3; r++) {
+        ctx.strokeStyle = planet.color + (40 - r * 10).toString(16);
+        ctx.lineWidth = 4 + r * 2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, planet.size * (1.4 + r * 0.2), planet.size * (0.3 + r * 0.05), 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    
+    // 衛星（降低亮度）
+    for (let m = 0; m < planet.moons; m++) {
+      const moonAngle = planet.angle * (2 + m * 0.5) + m * Math.PI * 0.7;
+      const moonDist = planet.size * (1.8 + m * 0.4);
+      const moonX = orbitX + Math.cos(moonAngle) * moonDist;
+      const moonY = orbitY + Math.sin(moonAngle) * moonDist * 0.6;
+      const moonSize = planet.size * 0.15;
+      
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#999999';
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = '#00000033';
+      ctx.beginPath();
+      ctx.arc(moonX + moonSize * 0.2, moonY + moonSize * 0.2, moonSize * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  });
+  ctx.globalAlpha = 1; // 恢復透明度
+  
+  // 繪製流星
+  createShootingStar();
+  shootingStars = shootingStars.filter(star => {
+    star.x += Math.cos(star.angle) * star.speed;
+    star.y += Math.sin(star.angle) * star.speed;
+    star.opacity -= 0.015;
+    
+    if (star.opacity <= 0) return false;
+    
+    const gradient = ctx.createLinearGradient(
+      star.x, star.y,
+      star.x - Math.cos(star.angle) * star.length, 
+      star.y - Math.sin(star.angle) * star.length
+    );
+    gradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`);
+    gradient.addColorStop(0.5, `rgba(135, 206, 250, ${star.opacity * 0.5})`);
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(star.x, star.y);
+    ctx.lineTo(
+      star.x - Math.cos(star.angle) * star.length,
+      star.y - Math.sin(star.angle) * star.length
+    );
+    ctx.stroke();
+    
+    return true;
+  });
+  
   requestAnimationFrame(drawGalaxy);
 }
 drawGalaxy();
@@ -909,15 +1140,15 @@ const expTable = [
   11600, 12700, 13850, 15050, 16300, 17600, 18950, 20350, 21800, 23300 // Lv 21-30
 ];
 
-// 稱號系統
-const titles = {
-  newbie: { name: '新手', condition: () => userLevel >= 1 },
-  active: { name: '活躍者', condition: () => totalMessages >= 50 },
-  veteran: { name: '老手', condition: () => totalMessages >= 200 },
-  master: { name: '大師', condition: () => userLevel >= 10 },
-  legend: { name: '傳奇', condition: () => userLevel >= 20 },
-  champion: { name: '冠軍', condition: () => totalMessages >= 500 }
-};
+// 稱號系統（按優先級排序，後面的優先級更高）
+const titles = [
+  { name: '新手', condition: () => userLevel >= 1, priority: 1 },
+  { name: '活躍者', condition: () => totalMessages >= 50, priority: 2 },
+  { name: '大師', condition: () => userLevel >= 10, priority: 3 },
+  { name: '老手', condition: () => totalMessages >= 200, priority: 4 },
+  { name: '傳奇', condition: () => userLevel >= 20, priority: 5 },
+  { name: '冠軍', condition: () => totalMessages >= 500, priority: 6 }
+];
 
 // 成就系統
 const achievements = [
@@ -975,14 +1206,47 @@ modalBackdrop.addEventListener('click', (e) => {
   }
 });
 
-// (頭像邏輯與上一版相同)
-const avatars = ['😀','😎','🚀','🤖','🧠','🎨','🎮','🏆','💡','📊'];
-avatars.forEach(a => {
+// 預設emoji頭貼
+const emojiAvatars = ['😀','😎','🚀','🤖','🧠','🎨','🎮','🏆','💡','📊'];
+emojiAvatars.forEach(a => {
   const av = document.createElement('span');
   av.className = 'avatar-select';
   av.textContent = a;
   av.onclick = () => {
     myAvatar = a;
+    document.querySelectorAll('.avatar-select').forEach(el => el.classList.remove('selected'));
+    av.classList.add('selected');
+    avatarPreview.style.display = 'none';
+    avatarPreview.src = '';
+  };
+  avatarGrid.appendChild(av);
+});
+
+// 自訂圖片頭貼
+const imageAvatars = [
+  'avatars/114820.jpg',
+  'avatars/螢幕擷取畫面 2025-12-01 234141.png',
+  'avatars/螢幕擷取畫面 2025-12-01 234723.png',
+  'avatars/螢幕擷取畫面 2025-12-01 234745.png',
+  'avatars/螢幕擷取畫面 2025-12-01 234819.png',
+  'avatars/螢幕擷取畫面 2025-12-01 234910.png',
+  'avatars/螢幕擷取畫面 2025-12-01 234924.png',
+  'avatars/螢幕擷取畫面 2025-12-01 234955.png',
+  'avatars/螢幕擷取畫面 2025-12-01 235117.png',
+  'avatars/螢幕擷取畫面 2025-12-01 235152.png',
+  'avatars/螢幕擷取畫面 2025-12-01 235718.png',
+  'avatars/螢幕擷取畫面 2025-12-01 235733.png',
+  'avatars/螢幕擷取畫面 2025-12-01 235758.png',
+  'avatars/螢幕擷取畫面 2025-12-01 235854.png'
+];
+imageAvatars.forEach(imgPath => {
+  const av = document.createElement('div');
+  av.className = 'avatar-select avatar-image';
+  av.style.backgroundImage = `url('${imgPath}')`;
+  av.style.backgroundSize = 'cover';
+  av.style.backgroundPosition = 'center';
+  av.onclick = () => {
+    myAvatar = imgPath;
     document.querySelectorAll('.avatar-select').forEach(el => el.classList.remove('selected'));
     av.classList.add('selected');
     avatarPreview.style.display = 'none';
@@ -1022,7 +1286,7 @@ function login() {
     
     // 更新側邊欄頭像和暱稱
     const userAvatarSidebar = document.getElementById('user-avatar-sidebar');
-    if (myAvatar.startsWith('http') || myAvatar.startsWith('data:')) {
+    if (myAvatar.startsWith('http') || myAvatar.startsWith('data:') || myAvatar.startsWith('avatars/')) {
       userAvatarSidebar.src = myAvatar;
     } else {
       const canvas = document.createElement('canvas');
@@ -1111,7 +1375,14 @@ function handleIncoming(msg) {
       });
       break;
     case 'chat': case 'image': case 'voice': case 'gif':
-      renderMessage(msg); break;
+      console.log('[DEBUG] Rendering message from:', msg.nickname, 'myNickname:', myNickname);
+      renderMessage(msg);
+      // 只在收到自己的訊息時更新統計（只比對暱稱，因為頭貼可能格式不同）
+      if (msg.nickname === myNickname) {
+        console.log('[DEBUG] This is my message, calling onMessageSent');
+        onMessageSent(msg.type);
+      }
+      break;
     case 'join': case 'leave': case 'switch':
       addSystemMessage(msg.content); break;
     case 'vote':
@@ -1169,7 +1440,6 @@ function sendMsg() {
     ws.send(JSON.stringify(msgData));
     document.getElementById('cancel-image').onclick();
     cancelReply();
-    onMessageSent('image');
   } else if (audioToSend) {
     const msgData = {
       type: 'voice', room: currentRoom, nickname: myNickname, avatar: myAvatar,
@@ -1180,7 +1450,6 @@ function sendMsg() {
     ws.send(JSON.stringify(msgData));
     document.getElementById('cancel-audio').onclick();
     cancelReply();
-    onMessageSent('voice');
   } else if (content) {
     const msgData = {
       type: 'chat', room: currentRoom, nickname: myNickname, avatar: myAvatar,
@@ -1188,11 +1457,9 @@ function sendMsg() {
       level: userLevel, title: userTitle
     };
     if (replyToMessage) msgData.replyTo = replyToMessage;
-    console.log('[DEBUG] Sending message:', msgData);
     ws.send(JSON.stringify(msgData));
     messageInput.value = '';
     cancelReply();
-    onMessageSent('chat');
   }
 }
 messageInput.addEventListener('keydown', e => {
@@ -1331,13 +1598,31 @@ function renderMessage(msg) {
   
   const avatar = document.createElement('img');
   avatar.className = 'msg-avatar';
-  if (msg.avatar && (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:'))) {
+  avatar.alt = '';
+  
+  if (msg.avatar && (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:') || msg.avatar.startsWith('avatars/'))) {
     avatar.src = msg.avatar;
+    avatar.onerror = () => {
+      // 載入失敗時顯示預設emoji
+      const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+      const ctx = canvas.getContext('2d'); ctx.font = '48px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('👤', 32, 36);
+      avatar.src = canvas.toDataURL();
+    };
   } else if (msg.avatar) {
+    // Emoji 頭貼
     const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
     const ctx = canvas.getContext('2d'); ctx.font = '48px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(msg.avatar, 32, 36);
+    avatar.src = canvas.toDataURL();
+  } else {
+    // 沒有頭貼時的預設
+    const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d'); ctx.font = '48px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('👤', 32, 36);
     avatar.src = canvas.toDataURL();
   }
   li.appendChild(avatar);
@@ -1445,6 +1730,10 @@ function renderMessage(msg) {
   const reactionsEl = document.createElement('div'); reactionsEl.className = 'msg-reactions';
   body.appendChild(reactionsEl);
   li.appendChild(body);
+  
+  // 將訊息添加到聊天室
+  messagesEl.appendChild(li);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 function renderVoiceMessage(content, msg) {
   const audio = new Audio(msg.content);
@@ -1899,7 +2188,13 @@ function sendReaction(messageId, emoji) {
   ws.send(JSON.stringify({
     type: 'reaction', room: currentRoom, content: messageId, emoji: emoji
   }));
-  updateAchievementProgress('reaction_send', 1);
+  
+  // 更新表情回應成就
+  const ach = achievements.find(a => a.id === 'reaction_send');
+  if (ach) {
+    ach.progress++;
+    localStorage.setItem('ach_reaction_send', ach.progress);
+  }
   checkAchievements();
 }
 function normalize(s) {
@@ -2149,6 +2444,7 @@ function updateUserLevelUI() {
 
 // 檢查並解鎖成就
 function checkAchievements() {
+  let hasNewAchievement = false;
   achievements.forEach(ach => {
     if (ach.id.startsWith('chat_')) {
       ach.progress = totalMessages;
@@ -2156,14 +2452,20 @@ function checkAchievements() {
       ach.progress = userLevel;
     }
     
-    // 檢查是否完成
+    // 檢查是否完成（避免重複解鎖）
     if (ach.progress >= ach.target && !unlockedBadges.includes(ach.id)) {
       unlockAchievement(ach);
+      hasNewAchievement = true;
     }
     
     // 保存進度
     localStorage.setItem(`ach_${ach.id}`, ach.progress);
   });
+  
+  // 只在有新成就時更新UI
+  if (hasNewAchievement) {
+    updateUserLevelUI();
+  }
 }
 
 // 解鎖成就
@@ -2180,14 +2482,28 @@ function unlockAchievement(achievement) {
 
 // 檢查稱號
 function checkTitles() {
-  for (const [key, title] of Object.entries(titles)) {
-    if (title.condition() && userTitle !== title.name) {
-      userTitle = title.name;
-      localStorage.setItem('userTitle', userTitle);
-      addSystemMessage(`🎖️ 獲得新稱號：${title.name}！`);
-      updateUserLevelUI();
-      break;
+  // 找出所有符合條件的稱號，按優先級排序
+  let bestTitle = null;
+  let highestPriority = 0;
+  
+  titles.forEach(title => {
+    if (title.condition() && title.priority > highestPriority) {
+      bestTitle = title;
+      highestPriority = title.priority;
     }
+  });
+  
+  // 如果找到更高級的稱號
+  if (bestTitle && userTitle !== bestTitle.name) {
+    const oldTitle = userTitle;
+    userTitle = bestTitle.name;
+    localStorage.setItem('userTitle', userTitle);
+    if (oldTitle) {
+      addSystemMessage(`🎖️ 稱號升級：${oldTitle} → ${bestTitle.name}！`);
+    } else {
+      addSystemMessage(`🎖️ 獲得稱號：${bestTitle.name}！`);
+    }
+    updateUserLevelUI();
   }
 }
 
@@ -2198,7 +2514,7 @@ function showProfileModal() {
   
   // 更新個人資料
   const profileAvatar = document.getElementById('profile-avatar');
-  if (myAvatar.startsWith('http') || myAvatar.startsWith('data:')) {
+  if (myAvatar.startsWith('http') || myAvatar.startsWith('data:') || myAvatar.startsWith('avatars/')) {
     profileAvatar.src = myAvatar;
   } else {
     const canvas = document.createElement('canvas');
@@ -2294,28 +2610,38 @@ function onMessageSent(type) {
   
   addExp(expGain);
   
-  // 更新成就進度
-  updateAchievementProgress('first_msg', 1);
-  updateAchievementProgress('chat_10', 1);
-  updateAchievementProgress('chat_50', 1);
-  updateAchievementProgress('chat_100', 1);
-  
-  if (type === 'image') updateAchievementProgress('image_send', 1);
-  if (type === 'voice') updateAchievementProgress('voice_use', 1);
-  if (type === 'vote') updateAchievementProgress('vote_create', 1);
-  if (type === 'quiz_start') updateAchievementProgress('quiz_create', 1);
+  // 更新特定類型成就進度（非聊天數量相關）
+  if (type === 'image') {
+    const ach = achievements.find(a => a.id === 'image_send');
+    if (ach) {
+      ach.progress++;
+      localStorage.setItem('ach_image_send', ach.progress);
+    }
+  }
+  if (type === 'voice') {
+    const ach = achievements.find(a => a.id === 'voice_use');
+    if (ach) {
+      ach.progress++;
+      localStorage.setItem('ach_voice_use', ach.progress);
+    }
+  }
+  if (type === 'vote') {
+    const ach = achievements.find(a => a.id === 'vote_create');
+    if (ach) {
+      ach.progress++;
+      localStorage.setItem('ach_vote_create', ach.progress);
+    }
+  }
+  if (type === 'quiz_start') {
+    const ach = achievements.find(a => a.id === 'quiz_create');
+    if (ach) {
+      ach.progress++;
+      localStorage.setItem('ach_quiz_create', ach.progress);
+    }
+  }
   
   checkAchievements();
   checkTitles();
-}
-
-// 更新成就進度
-function updateAchievementProgress(achId, increment = 1) {
-  const ach = achievements.find(a => a.id === achId);
-  if (ach && ach.progress < ach.target) {
-    ach.progress = Math.min(ach.progress + increment, ach.target);
-    localStorage.setItem(`ach_${achId}`, ach.progress);
-  }
 }
 
 function checkExistingLogin() {
@@ -2330,7 +2656,7 @@ function checkExistingLogin() {
     // 初始化用戶等級 UI
     updateUserLevelUI();
     const userAvatarSidebar = document.getElementById('user-avatar-sidebar');
-    if (myAvatar.startsWith('http') || myAvatar.startsWith('data:')) {
+    if (myAvatar.startsWith('http') || myAvatar.startsWith('data:') || myAvatar.startsWith('avatars/')) {
       userAvatarSidebar.src = myAvatar;
     } else {
       const canvas = document.createElement('canvas');

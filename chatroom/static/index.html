@@ -15,7 +15,7 @@ body {
   background-color: #0a0a1a;
 }
 canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; }
-.container { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 92%; max-width: 1280px; color: #fff; z-index: 1; }
+.container { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 95%; max-width: 1600px; color: #fff; z-index: 1; }
 h2, h3 { margin: 8px 0 12px; }
 input, button, textarea, label.button { font-size: 1em; padding: 10px 12px; margin: 6px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: #fff; }
 button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: pointer; }
@@ -26,7 +26,7 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 .col { display: flex; flex-direction: column; }
 #chat-window { display: none; height: 70vh; }
 #chat-content { display: flex; height: 100%; }
-#sidebar { width: 200px; padding-right: 20px; border-right: 1px solid rgba(255,255,255,0.2); overflow-y: auto; }
+#sidebar { width: 280px; padding-right: 20px; border-right: 1px solid rgba(255,255,255,0.2); overflow-y: auto; }
 #room-list { list-style: none; padding: 0; }
 #room-list li { padding: 10px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; }
 #room-list li:hover { background: rgba(255,255,255,0.1); }
@@ -537,9 +537,10 @@ textarea {
     </label>
     <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
   </div>
-  <div class="row" style="justify-content: center;">
-    <input type="text" id="nicknameInput" placeholder="輸入暱稱...">
-    <button onclick="login()">🚀 進入</button>
+  <div class="row" style="justify-content: center; gap: 10px;">
+    <input type="text" id="nicknameInput" placeholder="輸入暱稱..." style="flex: 1;">
+    <button onclick="generateRandomName()" style="padding: 12px 16px; min-width: auto;">🎲</button>
+    <button onclick="login()" style="padding: 12px 20px;">🚀 進入</button>
   </div>
 </div>
 
@@ -563,6 +564,9 @@ textarea {
             <span id="user-nickname-sidebar"></span>
             <span class="level-badge" id="user-level-badge">Lv.1</span>
             <span class="title-badge" id="user-title-badge" style="display:none;"></span>
+          </div>
+          <div style="font-size: 0.7em; opacity: 0.6; margin-top: 2px;">
+            ID: <span id="user-id-sidebar"></span>
           </div>
           <div class="exp-bar">
             <div class="exp-bar-fill" id="user-exp-bar" style="width: 0%;"></div>
@@ -807,6 +811,39 @@ textarea {
   <h4 style="margin-top: 20px;">🎖️ 我的徽章</h4>
   <div class="badges-grid" id="badges-grid">
     <!-- 徽章會動態生成 -->
+  </div>
+</div>
+
+<!-- 他人資料彈窗 -->
+<div id="user-profile-modal" class="modal" style="max-width: 600px; display: none;">
+  <button class="modal-close-btn" onclick="closeUserProfile()">×</button>
+  <h4>👤 用戶資料</h4>
+  
+  <div class="profile-card">
+    <div class="profile-header">
+      <img id="user-profile-avatar" class="profile-avatar" src="" alt="avatar">
+      <div class="profile-info">
+        <div class="profile-name">
+          <span id="user-profile-nickname"></span>
+          <span class="level-badge" id="user-profile-level-badge">Lv.1</span>
+        </div>
+        <div id="user-profile-title" class="title-badge" style="display:inline-block;"></div>
+        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 8px;">
+          <span id="user-profile-id"></span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="profile-stats">
+      <div class="stat-item">
+        <div class="stat-value" id="user-stat-level">1</div>
+        <div class="stat-label">等級</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="user-stat-title">無</div>
+        <div class="stat-label">稱號</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1107,10 +1144,25 @@ const quizModal = document.getElementById('quiz-modal');
 const voteModal = document.getElementById('vote-modal');
 const createRoomModal = document.getElementById('create-room-modal');
 
+// 生成或獲取唯一 ID
+function getOrCreateUserId() {
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    // 生成格式: 4位英文字母 + 4位數字
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randomLetters = Array.from({length: 4}, () => letters[Math.floor(Math.random() * 26)]).join('');
+    const randomNumbers = Math.floor(1000 + Math.random() * 9000);
+    userId = `${randomLetters}${randomNumbers}`;
+    localStorage.setItem('userId', userId);
+  }
+  return userId;
+}
+
 // (狀態變數與上一版相同)
 let ws;
 let myNickname = '';
 let myAvatar = '';
+let myUserId = getOrCreateUserId(); // 唯一裝置ID
 let currentRoom = localStorage.getItem('lastRoom') || 'lobby';
 if (localStorage.getItem('lastRoom')) {
   localStorage.removeItem('lastRoom');
@@ -1272,6 +1324,45 @@ avatarUpload.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
+// 隨機名字生成器
+function generateRandomName() {
+  const adjectives = [
+    '快樂的', '勇敢的', '聰明的', '神秘的', '閃亮的', '可愛的', '強大的', '溫柔的',
+    '活潑的', '沉穩的', '優雅的', '熱情的', '冷靜的', '幽默的', '認真的', '浪漫的',
+    '夢幻的', '霸氣的', '呆萌的', '機智的', '淘氣的', '靈巧的', '瀟灑的', '文藝的'
+  ];
+  
+  const nouns = [
+    '貓咪', '小狗', '兔子', '熊貓', '企鵝', '狐狸', '老虎', '獅子',
+    '海豚', '鯨魚', '星星', '月亮', '太陽', '雲朵', '彩虹', '流星',
+    '騎士', '法師', '忍者', '武士', '詩人', '畫家', '音樂家', '探險家',
+    '機器人', '火箭', '幽靈', '天使', '精靈', '巫師', '龍', '鳳凰',
+    // 增加「藥律工」和「zelpha」出現頻率（各重複15次）
+    '藥律工', '藥律工', '藥律工', '藥律工', '藥律工', 
+    '藥律工', '藥律工', '藥律工', '藥律工', '藥律工',
+    '藥律工', '藥律工', '藥律工', '藥律工', '藥律工',
+    'zelpha', 'zelpha', 'zelpha', 'zelpha', 'zelpha',
+    'zelpha', 'zelpha', 'zelpha', 'zelpha', 'zelpha',
+    'zelpha', 'zelpha', 'zelpha', 'zelpha', 'zelpha'
+  ];
+  
+  const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  
+  // 隨機生成1-2顆星星，放在名字左右
+  const starCount = Math.floor(Math.random() * 2) + 1;
+  const stars = '⭐'.repeat(starCount);
+  
+  const randomName = `${stars}${randomAdj}${randomNoun}${stars}`;
+  nicknameInput.value = randomName;
+  
+  // 添加一個小動畫效果
+  nicknameInput.style.animation = 'none';
+  setTimeout(() => {
+    nicknameInput.style.animation = 'pulse 0.3s ease';
+  }, 10);
+}
+
 // (login 函式與上一版相同)
 function login() {
   myNickname = nicknameInput.value.trim();
@@ -1299,6 +1390,7 @@ function login() {
       userAvatarSidebar.src = canvas.toDataURL();
     }
     document.getElementById('user-nickname-sidebar').textContent = myNickname;
+    document.getElementById('user-id-sidebar').textContent = myUserId;
     
     initWS();
   } else {
@@ -1434,7 +1526,7 @@ function sendMsg() {
     const msgData = {
       type: 'image', room: currentRoom, nickname: myNickname, avatar: myAvatar,
       content: imageToSend, timestamp: new Date().toISOString(),
-      level: userLevel, title: userTitle
+      level: userLevel, title: userTitle, userId: myUserId
     };
     if (replyToMessage) msgData.replyTo = replyToMessage;
     ws.send(JSON.stringify(msgData));
@@ -1444,7 +1536,7 @@ function sendMsg() {
     const msgData = {
       type: 'voice', room: currentRoom, nickname: myNickname, avatar: myAvatar,
       content: audioToSend, transcript: content, timestamp: new Date().toISOString(),
-      level: userLevel, title: userTitle
+      level: userLevel, title: userTitle, userId: myUserId
     };
     if (replyToMessage) msgData.replyTo = replyToMessage;
     ws.send(JSON.stringify(msgData));
@@ -1454,7 +1546,7 @@ function sendMsg() {
     const msgData = {
       type: 'chat', room: currentRoom, nickname: myNickname, avatar: myAvatar,
       content: content, timestamp: new Date().toISOString(),
-      level: userLevel, title: userTitle
+      level: userLevel, title: userTitle, userId: myUserId
     };
     if (replyToMessage) msgData.replyTo = replyToMessage;
     ws.send(JSON.stringify(msgData));
@@ -1529,6 +1621,51 @@ function closeModals() {
   if (stickerModal) stickerModal.style.display = 'none';
   const gifModal = document.getElementById('gif-modal');
   if (gifModal) gifModal.style.display = 'none';
+  const userProfileModal = document.getElementById('user-profile-modal');
+  if (userProfileModal) userProfileModal.style.display = 'none';
+}
+
+function closeUserProfile() {
+  modalBackdrop.style.display = 'none';
+  const userProfileModal = document.getElementById('user-profile-modal');
+  if (userProfileModal) userProfileModal.style.display = 'none';
+}
+
+// 用戶資料緩存
+const userProfileCache = new Map();
+
+function showUserProfile(nickname, userId, avatar, level, title) {
+  // 顯示彈窗
+  modalBackdrop.style.display = 'block';
+  const userProfileModal = document.getElementById('user-profile-modal');
+  userProfileModal.style.display = 'block';
+  
+  // 更新資料
+  const profileAvatar = document.getElementById('user-profile-avatar');
+  if (avatar.startsWith('http') || avatar.startsWith('data:') || avatar.startsWith('avatars/')) {
+    profileAvatar.src = avatar;
+  } else {
+    const canvas = document.createElement('canvas');
+    canvas.width = 80; canvas.height = 80;
+    const ctx = canvas.getContext('2d');
+    ctx.font = '60px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(avatar, 40, 46);
+    profileAvatar.src = canvas.toDataURL();
+  }
+  
+  document.getElementById('user-profile-nickname').textContent = nickname;
+  document.getElementById('user-profile-level-badge').textContent = `Lv.${level || 1}`;
+  document.getElementById('user-profile-title').textContent = title || '無稱號';
+  document.getElementById('user-profile-title').style.display = title ? 'inline-block' : 'none';
+  document.getElementById('user-profile-id').textContent = `ID: #${userId}`;
+  
+  document.getElementById('user-stat-level').textContent = level || 1;
+  document.getElementById('user-stat-title').textContent = title || '無';
+  
+  // 緩存用戶資料
+  userProfileCache.set(userId, { nickname, avatar, level, title });
 }
 
 function submitCreateRoom() {
@@ -1628,7 +1765,36 @@ function renderMessage(msg) {
   li.appendChild(avatar);
   const body = document.createElement('div'); body.className = 'msg-body';
   const header = document.createElement('div'); header.className = 'msg-header';
-  header.innerHTML = msg.nickname;
+  
+  // 創建可點擊的名字
+  const nicknameSpan = document.createElement('span');
+  nicknameSpan.textContent = msg.nickname;
+  nicknameSpan.style.cursor = 'pointer';
+  nicknameSpan.style.fontWeight = 'bold';
+  nicknameSpan.title = '點擊查看用戶資料';
+  nicknameSpan.onclick = () => {
+    if (msg.userId) {
+      showUserProfile(msg.nickname, msg.userId, msg.avatar, msg.level, msg.title);
+    }
+  };
+  nicknameSpan.onmouseover = () => {
+    nicknameSpan.style.textDecoration = 'underline';
+  };
+  nicknameSpan.onmouseout = () => {
+    nicknameSpan.style.textDecoration = 'none';
+  };
+  header.appendChild(nicknameSpan);
+  
+  // 添加用戶 ID
+  if (msg.userId) {
+    const userIdSpan = document.createElement('span');
+    userIdSpan.style.fontSize = '0.75em';
+    userIdSpan.style.opacity = '0.6';
+    userIdSpan.style.marginLeft = '6px';
+    userIdSpan.style.fontWeight = 'normal';
+    userIdSpan.textContent = `#${msg.userId}`;
+    header.appendChild(userIdSpan);
+  }
   
   // 添加等級徽章
   if (msg.level) {
@@ -1915,7 +2081,8 @@ function sendSticker(sticker) {
     content: sticker,
     timestamp: new Date().toISOString(),
     level: userLevel,
-    title: userTitle
+    title: userTitle,
+    userId: myUserId
   };
   
   ws.send(JSON.stringify(msgData));
@@ -2036,7 +2203,8 @@ function sendGif(gifUrl, title) {
     title: title,
     timestamp: new Date().toISOString(),
     level: userLevel,
-    title: userTitle
+    title: userTitle,
+    userId: myUserId
   };
   
   ws.send(JSON.stringify(msgData));
@@ -2051,7 +2219,8 @@ function submitQuiz() {
   }
   ws.send(JSON.stringify({
     type: 'quiz_start', room: currentRoom, nickname: myNickname, avatar: myAvatar,
-    question: question, answer: normalize(answer), timestamp: new Date().toISOString()
+    question: question, answer: normalize(answer), timestamp: new Date().toISOString(),
+    userId: myUserId
   }));
   closeModals();
   document.getElementById('quiz-question').value = '';
@@ -2096,7 +2265,8 @@ function submitVote() {
   }
   ws.send(JSON.stringify({
     type: 'vote', room: currentRoom, nickname: myNickname, avatar: myAvatar,
-    question: question, options: voteOptions, timestamp: new Date().toISOString()
+    question: question, options: voteOptions, timestamp: new Date().toISOString(),
+    userId: myUserId
   }));
   closeModals();
   document.getElementById('vote-question').value = '';
@@ -2109,7 +2279,13 @@ function renderVote(msg) {
   const li = document.createElement('li'); li.className = 'message system'; li.dataset.id = msg.timestamp;
   const body = document.createElement('div'); body.className = 'msg-body';
   const content = document.createElement('div'); content.className = 'msg-content msg-vote';
-  content.innerHTML = `<strong>📊 ${msg.nickname} 發起了投票：</strong><br>${msg.question}`;
+  
+  // 顯示發起者和 ID
+  let initiatorText = msg.nickname;
+  if (msg.userId) {
+    initiatorText += ` <span style="font-size: 0.8em; opacity: 0.7;">#${msg.userId}</span>`;
+  }
+  content.innerHTML = `<strong>📊 ${initiatorText} 發起了投票：</strong><br>${msg.question}`;
   const optionsEl = document.createElement('div'); optionsEl.style.marginTop = '10px';
   msg.options.forEach(opt => {
     const optBtn = document.createElement('a'); optBtn.className = 'vote-option';
@@ -2143,7 +2319,13 @@ function renderQuiz(msg) {
   const li = document.createElement('li'); li.className = 'message system'; li.dataset.id = msg.timestamp;
   const body = document.createElement('div'); body.className = 'msg-body';
   const content = document.createElement('div'); content.className = 'msg-content msg-quiz';
-  content.innerHTML = `<strong>🧠 ${msg.nickname} 發起了搶答：</strong><br>${msg.question}`;
+  
+  // 顯示發起者和 ID
+  let initiatorText = msg.nickname;
+  if (msg.userId) {
+    initiatorText += ` <span style="font-size: 0.8em; opacity: 0.7;">#${msg.userId}</span>`;
+  }
+  content.innerHTML = `<strong>🧠 ${initiatorText} 發起了搶答：</strong><br>${msg.question}`;
   const inputEl = document.createElement('div'); inputEl.className = 'quiz-input';
   const answerInput = document.createElement('input'); answerInput.type = 'text';
   answerInput.placeholder = '輸入答案...';
@@ -2176,7 +2358,8 @@ function submitQuizAnswer(quizId, answer) {
   }));
 }
 function updateQuizResult(msg) {
-  addSystemMessage(`🏆 搶答結束！ ${msg.nickname} 答對了！答案是：${msg.answer}`);
+  const idDisplay = msg.userId ? ` (#${msg.userId})` : '';
+  addSystemMessage(`🏆 搶答結束！ ${msg.nickname}${idDisplay} 答對了！答案是：${msg.answer}`);
   const quizEl = document.querySelector(`li[data-id="${msg.content}"] .msg-quiz`);
   if (quizEl) {
     quizEl.classList.add('answered');
@@ -2669,6 +2852,7 @@ function checkExistingLogin() {
       userAvatarSidebar.src = canvas.toDataURL();
     }
     document.getElementById('user-nickname-sidebar').textContent = myNickname;
+    document.getElementById('user-id-sidebar').textContent = myUserId;
     
     initWS();
   }

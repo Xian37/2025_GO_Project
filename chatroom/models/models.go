@@ -30,6 +30,7 @@ type Message struct {
 	Room       string          `json:"room"`
 	Nickname   string          `json:"nickname"`
 	Avatar     string          `json:"avatar"`
+	UserId     string          `json:"userId,omitempty"`
 	Content    string          `json:"content,omitempty"`
 	Type       string          `json:"type"`
 	Question   string          `json:"question,omitempty"`

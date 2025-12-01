@@ -36,7 +36,8 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 .message { display: flex; margin-bottom: 18px; align-items: flex-start; position: relative; }
 .msg-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
 .msg-body { max-width: 70%; display: flex; flex-direction: column; position: relative; padding-right: 120px; }
-.msg-header { font-size: 0.9em; font-weight: bold; margin-bottom: 4px; opacity: 0.8; }
+.msg-header { font-size: 0.9em; font-weight: bold; margin-bottom: 4px; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
+.msg-time { font-size: 0.85em; opacity: 0.6; font-weight: normal; margin-left: auto; }
 .msg-content { padding: 10px 14px; background: rgba(0, 0, 0, 0.2); border-radius: 0 12px 12px 12px; line-height: 1.5; word-wrap: break-word; }
 .message.system .msg-body { max-width: 100%; align-items: center; }
 .message.system .msg-content { background: rgba(135, 206, 250, 0.2); border-radius: 8px; font-style: italic; }
@@ -594,6 +595,7 @@ textarea {
           <button onclick="showMarkdownHelp()">📝 Markdown</button>
           <button onclick="showQuizModal()">🧠 出題搶答</button>
           <button onclick="showVoteModal()">📊 發起投票</button>
+          <button onclick="showStickerModal()">😊 貼圖</button>
         </div>
         <div id="reply-preview" class="reply-preview">
           <button class="reply-close" onclick="cancelReply()">×</button>
@@ -634,9 +636,20 @@ textarea {
   <h4>📊 建立投票</h4>
   <label for="vote-question">問題：</label>
   <input type="text" id="vote-question" placeholder="例如：晚餐要吃什麼？">
-  <label for="vote-options">選項 (用逗號 , 分隔)：</label>
-  <input type="text" id="vote-options" placeholder="例如：披薩, 漢堡, 義大利麵">
+  <label>選項：</label>
+  <div id="vote-options-list" style="margin-bottom: 10px;"></div>
+  <div style="display: flex; gap: 5px;">
+    <input type="text" id="vote-option-input" placeholder="輸入選項..." style="flex: 1;">
+    <button onclick="addVoteOption()" style="width: auto; padding: 8px 15px;">➕ 新增</button>
+  </div>
   <button onclick="submitVote()" style="margin-top: 15px; width: 100%;">發送投票</button>
+</div>
+
+<!-- 貼圖選擇器 Modal -->
+<div id="sticker-modal" class="modal" style="max-width: 600px;">
+  <button class="modal-close-btn" onclick="closeModals()">&times;</button>
+  <h4>😊 選擇貼圖</h4>
+  <div id="sticker-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; max-height: 400px; overflow-y: auto;"></div>
 </div>
 
 <div id="create-room-modal" class="modal">
@@ -1219,6 +1232,8 @@ function closeModals() {
   if (markdownHelpModal) markdownHelpModal.style.display = 'none';
   const profileModal = document.getElementById('profile-modal');
   if (profileModal) profileModal.style.display = 'none';
+  const stickerModal = document.getElementById('sticker-modal');
+  if (stickerModal) stickerModal.style.display = 'none';
 }
 
 function submitCreateRoom() {
@@ -1316,6 +1331,15 @@ function renderMessage(msg) {
     titleBadge.className = 'title-badge';
     titleBadge.textContent = msg.title;
     header.appendChild(titleBadge);
+  }
+  
+  // 添加時間戳記
+  if (msg.timestamp) {
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'msg-time';
+    const time = new Date(msg.timestamp);
+    timeSpan.textContent = time.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+    header.appendChild(timeSpan);
   }
   
   body.appendChild(header);
@@ -1509,6 +1533,69 @@ function showVoteModal() {
   voteModal.style.display = 'block';
   document.getElementById('vote-question').focus();
 }
+
+// 貼圖功能
+const stickers = [
+  '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊',
+  '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜',
+  '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶',
+  '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒',
+  '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '🥸',
+  '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺',
+  '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓',
+  '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩',
+  '🤡', '👹', '👺', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼',
+  '😽', '🙀', '😿', '😾', '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏',
+  '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍',
+  '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️',
+  '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀',
+  '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '💋', '🩸', '❤️', '🧡', '💛',
+  '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗',
+  '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎',
+  '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏',
+  '♐', '♑', '♒', '♓', '🆔', '⚛️', '🉑', '☢️', '☣️', '📴', '📳', '🈶'
+];
+
+function showStickerModal() {
+  modalBackdrop.style.display = 'block';
+  const stickerModal = document.getElementById('sticker-modal');
+  stickerModal.style.display = 'block';
+  
+  const grid = document.getElementById('sticker-grid');
+  if (grid.children.length === 0) {
+    stickers.forEach(sticker => {
+      const btn = document.createElement('button');
+      btn.textContent = sticker;
+      btn.style.cssText = 'font-size: 2em; padding: 10px; background: rgba(255,255,255,0.1); border: none; border-radius: 8px; cursor: pointer;';
+      btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,0.2)';
+      btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,0.1)';
+      btn.onclick = () => sendSticker(sticker);
+      grid.appendChild(btn);
+    });
+  }
+}
+
+function sendSticker(sticker) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert('連線尚未建立，請稍後再試！');
+    return;
+  }
+  
+  const msgData = {
+    type: 'chat',
+    room: currentRoom,
+    nickname: myNickname,
+    avatar: myAvatar,
+    content: sticker,
+    timestamp: new Date().toISOString(),
+    level: userLevel,
+    title: userTitle
+  };
+  
+  ws.send(JSON.stringify(msgData));
+  closeModals();
+  onMessageSent('chat');
+}
 function submitQuiz() {
   const question = document.getElementById('quiz-question').value;
   const answer = document.getElementById('quiz-answer').value;
@@ -1524,24 +1611,51 @@ function submitQuiz() {
   document.getElementById('quiz-answer').value = '';
   onMessageSent('quiz_start');
 }
-function submitVote() {
-  const question = document.getElementById('vote-question').value;
-  const optionsStr = document.getElementById('vote-options').value;
-  if (!question || !optionsStr) {
-    alert('問題和選項都不能為空！'); return;
+let voteOptions = [];
+
+function addVoteOption() {
+  const input = document.getElementById('vote-option-input');
+  const option = input.value.trim();
+  if (option) {
+    voteOptions.push(option);
+    input.value = '';
+    updateVoteOptionsList();
   }
-  const options = optionsStr.split(',').map(s => s.trim()).filter(s => s);
-  if (options.length < 2) {
-    alert('至少需要兩個選項'); return;
+}
+
+function removeVoteOption(index) {
+  voteOptions.splice(index, 1);
+  updateVoteOptionsList();
+}
+
+function updateVoteOptionsList() {
+  const list = document.getElementById('vote-options-list');
+  list.innerHTML = '';
+  voteOptions.forEach((opt, i) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'display: flex; align-items: center; gap: 5px; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 5px;';
+    item.innerHTML = `<span style="flex: 1;">${i + 1}. ${opt}</span><button onclick="removeVoteOption(${i})" style="padding: 2px 8px; background: rgba(255,0,0,0.3);">✕</button>`;
+    list.appendChild(item);
+  });
+}
+
+function submitVote() {
+  const question = document.getElementById('vote-question').value.trim();
+  if (!question) {
+    alert('請輸入問題！'); return;
+  }
+  if (voteOptions.length < 2) {
+    alert('至少需要兩個選項！'); return;
   }
   ws.send(JSON.stringify({
     type: 'vote', room: currentRoom, nickname: myNickname, avatar: myAvatar,
-    question: question, options: options, timestamp: new Date().toISOString()
+    question: question, options: voteOptions, timestamp: new Date().toISOString()
   }));
   closeModals();
   document.getElementById('vote-question').value = '';
+  voteOptions = [];
+  updateVoteOptionsList();
   onMessageSent('vote');
-  document.getElementById('vote-options').value = '';
 }
 // (舊的投票/搶答函式 renderVote, sendVote... 等與上一版相同)
 function renderVote(msg) {
@@ -1587,12 +1701,22 @@ function renderQuiz(msg) {
   const answerInput = document.createElement('input'); answerInput.type = 'text';
   answerInput.placeholder = '輸入答案...';
   const submitBtn = document.createElement('button'); submitBtn.textContent = '搶答！';
+  submitBtn.style.cursor = 'pointer';
   const sendAnswer = () => {
-    const ans = answerInput.value;
-    if (ans) { submitQuizAnswer(msg.timestamp, ans); answerInput.disabled = true; submitBtn.disabled = true; }
+    const ans = answerInput.value.trim();
+    if (ans) { 
+      submitQuizAnswer(msg.timestamp, ans); 
+      answerInput.disabled = true; 
+      submitBtn.disabled = true;
+      submitBtn.textContent = '已送出';
+    }
   };
-  submitBtn.onclick = sendAnswer;
-  answerInput.onkeydown = e => { if (e.key === 'Enter') sendAnswer(); };
+  submitBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sendAnswer();
+  };
+  answerInput.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); sendAnswer(); } };
   inputEl.appendChild(answerInput); inputEl.appendChild(submitBtn);
   content.appendChild(inputEl);
   body.appendChild(content); li.appendChild(body);

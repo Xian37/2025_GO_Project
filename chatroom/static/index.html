@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>GO GO GO Chatroom</title>
+<title>🌟 Group 22 多人線上聊天室 🌟</title>
 <!-- Markdown 和程式碼高亮支援 -->
 <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
@@ -15,35 +15,201 @@ body {
   background-color: #0a0a1a;
 }
 canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; }
-.container { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 95%; max-width: 1600px; color: #fff; z-index: 1; }
-h2, h3 { margin: 8px 0 12px; }
-input, button, textarea, label.button { font-size: 1em; padding: 10px 12px; margin: 6px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: #fff; }
-button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: pointer; }
+.container { 
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(135,206,250,0.08) 100%); 
+  backdrop-filter: blur(15px); 
+  border-radius: 16px; 
+  padding: 28px; 
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(135,206,250,0.2), inset 0 0 20px rgba(255,255,255,0.05); 
+  border: 1px solid rgba(135,206,250,0.3);
+  width: 95%; 
+  max-width: 1600px;
+  max-height: 90vh;
+  overflow: auto;
+  color: #fff; 
+  z-index: 1;
+  box-sizing: border-box;
+}
+h2, h3 { margin: 8px 0 12px; text-shadow: 0 2px 8px rgba(135,206,250,0.5); }
+input, button, textarea, label.button { 
+  font-size: 1em; 
+  padding: 10px 12px; 
+  margin: 6px; 
+  border-radius: 8px; 
+  border: 1px solid rgba(135,206,250,0.3); 
+  background: rgba(255,255,255,0.1); 
+  color: #fff; 
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+button:hover, label.button:hover { 
+  background: rgba(135,206,250,0.3); 
+  cursor: pointer; 
+  box-shadow: 0 4px 12px rgba(135,206,250,0.4);
+  border-color: rgba(135,206,250,0.5);
+}
 .modal input[type="text"] { width: 95%; } /* ✨ (功能 1) Modal input 寬度 */
 
 /* ... (其他 CSS 與 Response 11 相同) ... */
-.row { display: flex; align-items: center; }
+.row { 
+  display: flex; 
+  align-items: center; 
+  width: 100%; 
+  max-width: 100%; 
+  box-sizing: border-box;
+}
 .col { display: flex; flex-direction: column; }
-#chat-window { display: none; height: 70vh; }
-#chat-content { display: flex; height: 100%; }
-#sidebar { width: 280px; padding-right: 20px; border-right: 1px solid rgba(255,255,255,0.2); overflow-y: auto; }
+#chat-window { 
+  display: none;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+#chat-content { 
+  display: flex; 
+  height: 65vh;
+  max-height: 65vh;
+  min-height: 400px;
+  overflow: hidden;
+}
+#sidebar { 
+  width: 280px; 
+  padding-right: 20px; 
+  border-right: 2px solid rgba(135,206,250,0.4); 
+  overflow-y: auto; 
+  overflow-x: hidden;
+  background: rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+  box-sizing: border-box;
+  height: 100%;
+  max-height: 100%;
+}
 #room-list { list-style: none; padding: 0; }
-#room-list li { padding: 10px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; }
-#room-list li:hover { background: rgba(255,255,255,0.1); }
-#room-list li.active { background: rgba(135, 206, 250, 0.4); }
-#main-chat { flex-grow: 1; display: flex; flex-direction: column; padding-left: 20px; }
-#messages { flex-grow: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+#room-list li { 
+  padding: 12px; 
+  margin-bottom: 8px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  border: 1px solid rgba(135,206,250,0.2);
+  transition: all 0.3s ease;
+  background: rgba(255,255,255,0.05);
+}
+#room-list li:hover { 
+  background: rgba(135,206,250,0.2); 
+  border-color: rgba(135,206,250,0.5);
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(135,206,250,0.3);
+}
+#room-list li.active { 
+  background: linear-gradient(135deg, rgba(135, 206, 250, 0.4) 0%, rgba(135, 206, 250, 0.6) 100%); 
+  border-color: rgba(135,206,250,0.8);
+  box-shadow: 0 4px 12px rgba(135,206,250,0.5);
+}
+#main-chat { 
+  flex: 1 1 auto;
+  display: flex; 
+  flex-direction: column; 
+  background: rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 15px;
+  margin-left: 20px;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  height: 100%;
+  max-height: 100%;
+}
+#messages { 
+  flex: 1 1 auto;
+  overflow-y: scroll !important; 
+  overflow-x: hidden;
+  list-style: none; 
+  padding: 0; 
+  margin: 0;
+  min-height: 0;
+  max-height: 100%;
+  width: 100%;
+}
+/* 自訂滾動條樣式 */
+#messages::-webkit-scrollbar {
+  width: 12px;
+}
+#messages::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+#messages::-webkit-scrollbar-thumb {
+  background: rgba(135, 206, 250, 0.5);
+  border-radius: 6px;
+}
+#messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(135, 206, 250, 0.7);
+}
 .message { display: flex; margin-bottom: 18px; align-items: flex-start; position: relative; }
-.msg-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; flex-shrink: 0; background-color: rgba(255,255,255,0.1); }
+.msg-avatar { 
+  width: 50px; 
+  height: 50px; 
+  border-radius: 50%; 
+  margin-right: 12px; 
+  object-fit: cover; 
+  flex-shrink: 0; 
+  background-color: rgba(255,255,255,0.1); 
+  border: 2px solid rgba(135,206,250,0.4);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
 .msg-body { max-width: 70%; display: flex; flex-direction: column; position: relative; padding-right: 120px; }
-.msg-header { font-size: 0.9em; font-weight: bold; margin-bottom: 4px; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
-.msg-time { font-size: 0.85em; opacity: 0.6; font-weight: normal; margin-left: auto; }
-.msg-content { padding: 10px 14px; background: rgba(0, 0, 0, 0.2); border-radius: 0 12px 12px 12px; line-height: 1.5; word-wrap: break-word; }
+.msg-header { 
+  font-size: 0.9em; 
+  font-weight: bold; 
+  margin-bottom: 4px; 
+  opacity: 0.8; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  flex-wrap: wrap;
+}
+.msg-header span {
+  white-space: nowrap;
+}
+.msg-time { font-size: 0.85em; opacity: 0.6; font-weight: normal; margin-left: auto; white-space: nowrap; }
+.msg-content { 
+  padding: 12px 16px; 
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.2) 100%); 
+  border-radius: 0 14px 14px 14px; 
+  line-height: 1.6; 
+  word-wrap: break-word; 
+  border: 1px solid rgba(135,206,250,0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
 .message.system .msg-body { max-width: 100%; align-items: center; }
 .message.system .msg-content { background: rgba(135, 206, 250, 0.2); border-radius: 8px; font-style: italic; }
-#chat-controls { display: flex; margin-top: 10px; }
-#chat-controls input { flex-grow: 1; }
-#chat-controls button { background: rgba(135, 206, 250, 0.3); }
+#chat-controls { 
+  display: flex !important; 
+  margin: 10px 0 0 0 !important; 
+  padding: 0 !important;
+  align-items: center; 
+  gap: 8px; 
+  flex-wrap: nowrap;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+}
+#chat-controls input { 
+  flex: 1 1 0 !important; 
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  box-sizing: border-box !important;
+}
+#chat-controls button { 
+  background: rgba(135, 206, 250, 0.3); 
+  flex-shrink: 0;
+  margin: 0;
+}
 #chat-controls button:hover { background: rgba(135, 206, 250, 0.5); }
 #login-window { text-align: center; }
 #avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px; justify-items: center; }
@@ -51,7 +217,15 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
 .avatar-select.avatar-image { background-color: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); }
 .avatar-select:hover { opacity: 1; transform: scale(1.1); }
 .avatar-select.selected { opacity: 1; transform: scale(1.1); box-shadow: 0 0 10px 2px #87CEFA; }
-.toolbar { display: flex; flex-wrap: wrap; margin-bottom: 10px; }
+.toolbar { 
+  display: flex; 
+  flex-wrap: wrap; 
+  margin: 10px 0; 
+  width: 100%; 
+  box-sizing: border-box;
+  padding: 0;
+  flex-shrink: 0;
+}
 .toolbar button, .toolbar label { margin: 4px; padding: 8px 10px; font-size: 0.9em; display: flex; align-items: center; }
 #imageInput { display: none; }
 #voiceInput { display: none; }
@@ -256,23 +430,40 @@ button:hover, label.button:hover { background: rgba(255,255,255,0.25); cursor: p
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(30, 30, 50, 0.8);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 12px;
-  padding: 24px;
+  background: linear-gradient(135deg, rgba(30, 30, 50, 0.95) 0%, rgba(20, 30, 60, 0.95) 100%);
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(135,206,250,0.5);
+  border-radius: 16px;
+  padding: 28px;
   width: 90%;
   max-width: 500px;
   z-index: 11;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 60px rgba(135,206,250,0.3);
 }
-.modal h4 { margin-top: 0; font-size: 1.4em; }
+.modal h4 { 
+  margin-top: 0; 
+  font-size: 1.5em; 
+  text-shadow: 0 2px 10px rgba(135,206,250,0.6);
+  border-bottom: 2px solid rgba(135,206,250,0.3);
+  padding-bottom: 10px;
+}
 .modal-close-btn {
   position: absolute;
   top: 10px; right: 15px;
-  font-size: 1.5em;
+  font-size: 1.8em;
   color: #fff;
-  background: none;
-  border: none;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(135,206,250,0.3);
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+.modal-close-btn:hover {
+  background: rgba(255,100,100,0.3);
+  transform: rotate(90deg);
+  box-shadow: 0 0 15px rgba(255,100,100,0.5);
 }
 .modal label {
   display: block;
@@ -357,23 +548,27 @@ textarea {
   transition: width 0.3s ease;
 }
 .profile-card {
-  background: rgba(30, 30, 50, 0.9);
-  border-radius: 12px;
-  padding: 20px;
-  margin: 10px 0;
-  border: 1px solid rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, rgba(30, 30, 50, 0.95) 0%, rgba(40, 40, 70, 0.95) 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 15px 0;
+  border: 2px solid rgba(135,206,250,0.4);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 0 20px rgba(135,206,250,0.1);
 }
 .profile-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(135,206,250,0.3);
 }
 .profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   margin-right: 15px;
-  border: 3px solid #667eea;
+  border: 3px solid rgba(135,206,250,0.6);
+  box-shadow: 0 4px 15px rgba(135,206,250,0.4);
 }
 .profile-info {
   flex: 1;
@@ -391,14 +586,17 @@ textarea {
 }
 .stat-item {
   text-align: center;
-  padding: 10px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(135,206,250,0.1) 0%, rgba(135,206,250,0.05) 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(135,206,250,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .stat-value {
-  font-size: 1.5em;
+  font-size: 1.6em;
   font-weight: bold;
   color: #87CEFA;
+  text-shadow: 0 2px 8px rgba(135,206,250,0.6);
 }
 .stat-label {
   font-size: 0.85em;
@@ -413,19 +611,24 @@ textarea {
 }
 .badge-item {
   text-align: center;
-  padding: 10px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(135,206,250,0.15) 0%, rgba(135,206,250,0.05) 100%);
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(135,206,250,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .badge-item:hover {
-  background: rgba(255,255,255,0.1);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(135,206,250,0.3) 0%, rgba(135,206,250,0.2) 100%);
+  transform: scale(1.08);
+  box-shadow: 0 4px 15px rgba(135,206,250,0.4);
+  border-color: rgba(135,206,250,0.6);
 }
 .badge-item.locked {
   opacity: 0.3;
   cursor: not-allowed;
+  filter: grayscale(100%);
 }
 .badge-icon {
   font-size: 2em;
@@ -527,8 +730,24 @@ textarea {
 <canvas id="galaxy"></canvas>
 
 <div class="container" id="login-window">
-  <h2>GO GO GO 聊天室</h2>
-  <p>請選擇你的頭像和暱稱</p>
+  <h2>🌟 Group 22 多人線上聊天室 🌟</h2>
+  <p style="font-size: 1.1em; margin-bottom: 20px; opacity: 0.9;">一個充滿星空魔力的即時聊天平台</p>
+  
+  <div style="background: rgba(135, 206, 250, 0.1); border: 1px solid rgba(135, 206, 250, 0.3); border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 600px; text-align: left;">
+    <h3 style="margin-top: 0; color: #87CEFA; font-size: 1.2em;">✨ 主要功能</h3>
+    <ul style="line-height: 1.8; margin: 10px 0; padding-left: 25px;">
+      <li>💬 <strong>即時聊天</strong> - 支援文字、圖片、語音、GIF 多種訊息格式</li>
+      <li>🎨 <strong>個性化</strong> - 自訂頭貼、隨機名字生成器、等級稱號系統</li>
+      <li>🏆 <strong>成就系統</strong> - 解鎖徽章、升級獎勵、追蹤進度</li>
+      <li>🎯 <strong>互動功能</strong> - 投票、搶答、表情回應、引用訊息</li>
+      <li>🔊 <strong>語音支援</strong> - 語音輸入、文字朗讀、多語言辨識</li>
+      <li>🎨 <strong>Markdown</strong> - 支援程式碼高亮、表格、清單等格式</li>
+      <li>🚪 <strong>多房間</strong> - 建立或加入不同主題的聊天室</li>
+      <li>🌌 <strong>宇宙主題</strong> - 沉浸式星空背景、流星、行星動畫</li>
+    </ul>
+  </div>
+  
+  <p style="font-size: 0.95em; margin: 20px 0 10px; opacity: 0.8;">請選擇你的頭像和暱稱開始使用</p>
   <div id="avatar-grid"></div>
   <div style="margin: 10px 0;">
     <img id="avatar-preview" src="" style="width: 80px; height: 80px; border-radius: 50%; display: none; margin: 0 auto 15px; border: 2px solid #87CEFA; object-fit: cover;">
@@ -546,7 +765,7 @@ textarea {
 
 <div class="container" id="chat-window">
   <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
-    <h3>💬 聊天室</h3>
+    <h3>💬 Group 22 多人線上聊天室</h3>
     <div>
       <button onclick="goToGame('game.html')">🎮 猜數字</button>
       <button onclick="goToGame('draw.html')">🎨 你畫我猜</button>
@@ -587,7 +806,10 @@ textarea {
         </ul>
       </div>
       <div id="main-chat">
-        <h3 id="room-name-header" style="margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2);">lobby</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3 id="room-name-header" style="margin: 0; padding-bottom: 10px; border-bottom: 2px solid rgba(135, 206, 250, 0.5); text-shadow: 0 0 10px rgba(135, 206, 250, 0.8); flex-grow: 1;">聊天大廳</h3>
+          <button onclick="clearMessages()" style="padding: 8px 15px; background: rgba(255, 100, 100, 0.3); border: 1px solid rgba(255, 100, 100, 0.5); margin-left: 15px;" title="清除本地訊息記錄">🗑️ 清除訊息</button>
+        </div>
         <ul id="messages"></ul>
         <div class="toolbar">
           <label for="imageInput" class="button" id="image-label">🖼️ 圖片</label>
@@ -609,7 +831,7 @@ textarea {
           <div class="reply-author"></div>
           <div class="reply-content"></div>
         </div>
-        <div class="row" id="chat-controls">
+        <div id="chat-controls">
           <input type="text" id="messageInput" placeholder="輸入訊息...">
           <div id="image-preview-container" class="attachment-preview">
             <img id="image-preview" src="" style="max-height: 40px; border-radius: 4px;">
@@ -1163,7 +1385,11 @@ let ws;
 let myNickname = '';
 let myAvatar = '';
 let myUserId = getOrCreateUserId(); // 唯一裝置ID
-let currentRoom = localStorage.getItem('lastRoom') || 'lobby';
+// 遷移舊的lobby名稱到聊天大廳
+if (localStorage.getItem('lastRoom') === 'lobby') {
+  localStorage.setItem('lastRoom', '聊天大廳');
+}
+let currentRoom = localStorage.getItem('lastRoom') || '聊天大廳';
 if (localStorage.getItem('lastRoom')) {
   localStorage.removeItem('lastRoom');
 }
@@ -1174,6 +1400,8 @@ let audioChunks = [];
 let imageToSend = null;
 let audioToSend = null; 
 let audioTranscript = null;
+let isReceivingHistory = false; // 追蹤是否正在接收歷史訊息
+let historyReceiveTimeout = null; // 歷史訊息接收超時定時器
 
 // 引用訊息變數
 let replyToMessage = null;
@@ -1259,6 +1487,7 @@ modalBackdrop.addEventListener('click', (e) => {
 });
 
 // 預設emoji頭貼
+const avatarPreview = document.getElementById('avatar-preview');
 const emojiAvatars = ['😀','😎','🚀','🤖','🧠','🎨','🎮','🏆','💡','📊'];
 emojiAvatars.forEach(a => {
   const av = document.createElement('span');
@@ -1307,7 +1536,6 @@ imageAvatars.forEach(imgPath => {
   avatarGrid.appendChild(av);
 });
 const avatarUpload = document.getElementById('avatarUpload');
-const avatarPreview = document.getElementById('avatar-preview');
 avatarUpload.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -1412,6 +1640,16 @@ function initWS() {
     reconnectInterval = 1000; // 連線成功，重置重連間隔
     document.getElementById('online-status').style.display = 'block'; // 顯示在線狀態
     addSystemMessage('已連線到聊天室！');
+    
+    // 設置歷史訊息接收標記
+    isReceivingHistory = true;
+    // 設置超時，2秒後自動結束歷史接收狀態
+    if (historyReceiveTimeout) clearTimeout(historyReceiveTimeout);
+    historyReceiveTimeout = setTimeout(() => {
+      isReceivingHistory = false;
+      console.log('[DEBUG] History receiving period ended');
+    }, 2000);
+    
     switchRoom(currentRoom, true);
   };
   
@@ -1440,7 +1678,18 @@ function initWS() {
 }
 
 function handleIncoming(msg) {
-  console.log('[DEBUG] Handling message type:', msg.type);
+  console.log('[DEBUG] Handling message type:', msg.type, 'timestamp:', msg.timestamp, 'isReceivingHistory:', isReceivingHistory);
+  
+  // 如果正在接收歷史訊息，且當前房間已清除，則過濾歷史訊息
+  if (isReceivingHistory && (msg.type === 'chat' || msg.type === 'image' || msg.type === 'voice' || msg.type === 'gif' || msg.type === 'join' || msg.type === 'leave')) {
+    const targetRoom = msg.room || currentRoom;
+    const clearedTime = localStorage.getItem(`cleared_${targetRoom}`);
+    if (clearedTime === 'CLEARED') {
+      console.log('[DEBUG] Skipping history message due to clear:', msg.type, msg.nickname || msg.content);
+      return;
+    }
+  }
+  
   switch (msg.type) {
     case 'online_count':
       document.getElementById('online-count').textContent = msg.content;
@@ -1475,8 +1724,28 @@ function handleIncoming(msg) {
         onMessageSent(msg.type);
       }
       break;
-    case 'join': case 'leave': case 'switch':
-      addSystemMessage(msg.content); break;
+    case 'join': case 'leave': 
+      addSystemMessage(msg.content); 
+      break;
+    case 'switch':
+      addSystemMessage(msg.content);
+      // 如果是自己切換房間，更新currentRoom
+      if (msg.nickname === myNickname) {
+        currentRoom = msg.room;
+        const roomHeader = document.getElementById('room-name-header');
+        if (msg.room === '聊天大廳') {
+          roomHeader.innerHTML = msg.room;
+        } else {
+          roomHeader.textContent = msg.room;
+        }
+        // 清空訊息列表
+        document.getElementById('messages').innerHTML = '';
+        // 更新房間列表的active狀態
+        document.querySelectorAll('#room-list li').forEach(li => {
+          li.classList.toggle('active', li.dataset.room === currentRoom);
+        });
+      }
+      break;
     case 'vote':
       renderVote(msg); break;
     case 'vote_result':
@@ -1631,6 +1900,18 @@ function closeUserProfile() {
   if (userProfileModal) userProfileModal.style.display = 'none';
 }
 
+// 清除訊息功能
+function clearMessages() {
+  if (confirm('確定要清除所有訊息嗎？\n\n此操作會清除本地訊息記錄，\n刷新後將不會顯示此房間的歷史訊息。')) {
+    const messagesEl = document.getElementById('messages');
+    messagesEl.innerHTML = '';
+    // 記錄清除標記，使用 "CLEARED" 作為標記值
+    localStorage.setItem(`cleared_${currentRoom}`, 'CLEARED');
+    addSystemMessage('✨ 訊息已清除（刷新後不會載入歷史訊息）');
+    console.log('[DEBUG] Cleared messages for room:', currentRoom);
+  }
+}
+
 // 用戶資料緩存
 const userProfileCache = new Map();
 
@@ -1682,7 +1963,7 @@ function submitCreateRoom() {
 }
 
 function joinRoom(room) {
-  if (room === currentRoom && room !== 'lobby') return;
+  if (room === currentRoom && room !== '聊天大廳') return;
 
   if (roomInfo.hasOwnProperty(room)) {
     if (roomInfo[room]) { 
@@ -1703,17 +1984,20 @@ function updateRoomList(rooms) {
   roomInfo = rooms;
   roomListEl.innerHTML = '';
  
-  if (roomInfo['lobby'] !== undefined) {
+  if (roomInfo['聊天大廳'] !== undefined) {
       const lobbyLi = document.createElement('li');
-      lobbyLi.dataset.room = 'lobby';
-      lobbyLi.textContent = 'lobby';
-      lobbyLi.className = ('lobby' === currentRoom) ? 'active' : '';
-      lobbyLi.onclick = () => joinRoom('lobby');
+      lobbyLi.dataset.room = '聊天大廳';
+      lobbyLi.textContent = '🏠 聊天大廳';
+      lobbyLi.className = ('聊天大廳' === currentRoom) ? 'active' : '';
+      lobbyLi.onclick = () => joinRoom('聊天大廳');
+      lobbyLi.style.fontWeight = 'bold';
+      lobbyLi.style.borderBottom = '1px solid rgba(135, 206, 250, 0.3)';
+      lobbyLi.style.marginBottom = '10px';
       roomListEl.appendChild(lobbyLi);
   }
 
   const roomNames = Object.keys(rooms);
-  const sortedRooms = roomNames.filter(room => room !== 'lobby').sort();
+  const sortedRooms = roomNames.filter(room => room !== '聊天大廳').sort();
 
   sortedRooms.forEach(room => {
     const isPrivate = rooms[room];
@@ -2836,8 +3120,17 @@ function checkExistingLogin() {
     loginWindow.style.display = 'none';
     chatWindow.style.display = 'block';
     
-    // 初始化用戶等級 UI
-    updateUserLevelUI();
+    // 直接更新 UI，不要呼叫 updateUserLevelUI 以避免觸發 checkAchievements
+    const requiredExp = getExpForLevel(userLevel);
+    const expPercent = (userExp / requiredExp * 100).toFixed(1);
+    document.getElementById('user-level-badge').textContent = `Lv.${userLevel}`;
+    document.getElementById('user-exp-bar').style.width = `${expPercent}%`;
+    document.getElementById('user-exp-text').textContent = `${userExp}/${requiredExp} EXP`;
+    if (userTitle) {
+      document.getElementById('user-title-badge').textContent = userTitle;
+      document.getElementById('user-title-badge').style.display = 'inline-block';
+    }
+    
     const userAvatarSidebar = document.getElementById('user-avatar-sidebar');
     if (myAvatar.startsWith('http') || myAvatar.startsWith('data:') || myAvatar.startsWith('avatars/')) {
       userAvatarSidebar.src = myAvatar;

@@ -271,8 +271,8 @@ func (s *StateService) BroadcastRoomList() {
 		}
 	}
 
-	if _, exists := roomInfo["lobby"]; !exists {
-		roomInfo["lobby"] = false
+	if _, exists := roomInfo["聊天大廳"]; !exists {
+		roomInfo["聊天大廳"] = false
 	}
 
 	s.RoomPasswordsMutex.RUnlock()
@@ -359,7 +359,7 @@ func (s *StateService) updateLeaderboard(score models.GameScore) {
 	s.broadcastLeaderboard()
 
 	announceMsg := models.Message{
-		Type: "chat", Room: "lobby", Nickname: "🏆 系統", Avatar: "🏆",
+		Type: "chat", Room: "聊天大廳", Nickname: "🏆 系統", Avatar: "🏆",
 		Content:   fmt.Sprintf("%s 在猜數字遊戲中獲勝了 (猜 %d 次, %d 秒)！", score.Nickname, score.Tries, score.Time),
 		Timestamp: time.Now().Format("15:04:05"),
 	}

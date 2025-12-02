@@ -225,7 +225,7 @@ func (s *StateServiceV2) SwitchRoom(client *models.Client, newRoom, password str
 			logger.Warn("Password verification failed",
 				zap.String("room", newRoom),
 				zap.String("error", errorType))
-			return "", fmt.Errorf(errorType)
+			return "", fmt.Errorf("%s", errorType)
 		}
 	} else if isNewRoom && password != "" {
 		// 新房間設置密碼

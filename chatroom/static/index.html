@@ -151,8 +151,8 @@ button:hover, label.button:hover {
 }
 .message { display: flex; margin-bottom: 18px; align-items: flex-start; position: relative; }
 .msg-avatar { 
-  width: 50px; 
-  height: 50px; 
+  width: 60px; 
+  height: 60px; 
   border-radius: 50%; 
   margin-right: 12px; 
   object-fit: cover; 
@@ -1594,6 +1594,12 @@ function generateRandomName() {
 // (login 函式與上一版相同)
 function login() {
   myNickname = nicknameInput.value.trim();
+  // 限制名字最長12個字
+  if (myNickname.length > 12) {
+    alert('暱稱最多只能12個字，請重新輸入！');
+    nicknameInput.focus();
+    return;
+  }
   if (myNickname && myAvatar) {
     localStorage.setItem("chatUser", myNickname);
     localStorage.setItem("chatAvatar", myAvatar);
@@ -1963,7 +1969,11 @@ function submitCreateRoom() {
 }
 
 function joinRoom(room) {
-  if (room === currentRoom && room !== '聊天大廳') return;
+  // 如果已經在目標房間，不需要切換
+  if (room === currentRoom) {
+    console.log('[DEBUG] Already in room:', room);
+    return;
+  }
 
   if (roomInfo.hasOwnProperty(room)) {
     if (roomInfo[room]) { 

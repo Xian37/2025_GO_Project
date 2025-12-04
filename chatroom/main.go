@@ -66,7 +66,7 @@ func main() {
 		broadcastChan,
 		leaderboardRepo,
 		workerPool,
-		ratelimiter,
+		rateLimiter,
 		appMetrics,
 		cfg,
 	)

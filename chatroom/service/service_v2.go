@@ -89,7 +89,7 @@ func (s *StateServiceV2) HandleMessageLoopWithContext(ctx context.Context) {
 			// 使用 worker pool 處理訊息
 			s.workerPool.Submit(func() {
 				start := time.Now()
-				s.broadcastMessage(msg)
+				s.ProcessMessage(msg)
 				s.metrics.RecordLatency(time.Since(start))
 			})
 

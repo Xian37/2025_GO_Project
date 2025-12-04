@@ -638,48 +638,117 @@ textarea {
   font-size: 0.75em;
 }
 .achievement-list {
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  padding-right: 5px;
 }
+
 .achievement-item {
   display: flex;
   align-items: center;
-  padding: 12px;
-  margin: 8px 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
-  border-left: 4px solid #667eea;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
+
+.achievement-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .achievement-item.unlocked {
-  border-left-color: #4CAF50;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+  border-color: rgba(76, 175, 80, 0.3);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
 }
+
+.achievement-item:not(.unlocked) .achievement-icon {
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+
 .achievement-icon {
   font-size: 2.5em;
   margin-right: 15px;
+  transition: all 0.3s ease;
 }
+
+.achievement-item.unlocked .achievement-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
 .achievement-info {
   flex: 1;
 }
+
 .achievement-name {
   font-weight: bold;
   margin-bottom: 4px;
+  color: #fff;
 }
+
+.achievement-item.unlocked .achievement-name {
+  color: #4CAF50;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
 .achievement-desc {
   font-size: 0.85em;
-  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.6);
 }
+
 .achievement-progress {
   width: 100%;
-  height: 4px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-  margin-top: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  margin-top: 8px;
   overflow: hidden;
+  position: relative;
 }
+
 .achievement-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  transition: width 0.3s ease;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.achievement-item.unlocked .achievement-progress-fill {
+  background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+}
+
+/* Add a shimmer effect to unlocked progress bars */
+.achievement-item.unlocked .achievement-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 .level-up-animation {
   position: fixed;
@@ -989,52 +1058,120 @@ textarea {
 
 <div id="profile-modal" class="modal" style="max-width: 600px;">
   <button class="modal-close-btn" onclick="closeModals()">×</button>
-  <h4>👤 個人資料</h4>
   
-  <div class="profile-card">
-    <div class="profile-header">
-      <img id="profile-avatar" class="profile-avatar" src="" alt="avatar">
-      <div class="profile-info">
-        <div class="profile-name">
-          <span id="profile-nickname"></span>
-          <span class="level-badge" id="profile-level-badge">Lv.1</span>
+  <div class="profile-tabs">
+    <button class="profile-tab active" onclick="switchProfileTab('overview')">📊 概覽</button>
+    <button class="profile-tab" onclick="switchProfileTab('achievements')">🏆 成就</button>
+  </div>
+  
+  <!-- Tab Content: Overview -->
+  <div id="tab-overview" class="profile-tab-content active">
+    <div class="profile-card">
+      <div class="profile-header">
+        <img id="profile-avatar" class="profile-avatar" src="" alt="avatar">
+        <div class="profile-info">
+          <div class="profile-name">
+            <span id="profile-nickname"></span>
+            <span class="level-badge" id="profile-level-badge">Lv.1</span>
+          </div>
+          <div id="profile-title" class="title-badge" style="display:inline-block;"></div>
+          <div class="exp-bar" style="margin-top: 8px;">
+            <div class="exp-bar-fill" id="profile-exp-bar" style="width: 0%;"></div>
+          </div>
+          <div style="font-size: 0.85em; opacity: 0.7; margin-top: 4px;">
+            <span id="profile-exp-text">0/100 EXP</span>
+          </div>
         </div>
-        <div id="profile-title" class="title-badge" style="display:inline-block;"></div>
-        <div class="exp-bar" style="margin-top: 8px;">
-          <div class="exp-bar-fill" id="profile-exp-bar" style="width: 0%;"></div>
+      </div>
+      
+      <div class="profile-stats">
+        <div class="stat-item">
+          <div class="stat-value" id="stat-level">1</div>
+          <div class="stat-label">等級</div>
         </div>
-        <div style="font-size: 0.85em; opacity: 0.7; margin-top: 4px;">
-          <span id="profile-exp-text">0/100 EXP</span>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-messages">0</div>
+          <div class="stat-label">訊息數</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-badges">0</div>
+          <div class="stat-label">徽章</div>
         </div>
       </div>
     </div>
     
-    <div class="profile-stats">
-      <div class="stat-item">
-        <div class="stat-value" id="stat-level">1</div>
-        <div class="stat-label">等級</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="stat-messages">0</div>
-        <div class="stat-label">訊息數</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="stat-badges">0</div>
-        <div class="stat-label">徽章</div>
-      </div>
+    <h4 style="margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">🎖️ 我的徽章</h4>
+    <div class="badges-grid" id="badges-grid" style="min-height: 100px;">
+      <!-- 徽章會動態生成 -->
     </div>
   </div>
   
-  <h4 style="margin-top: 20px;">🏆 成就系統</h4>
-  <div class="achievement-list" id="achievement-list">
-    <!-- 成就項目會動態生成 -->
-  </div>
-  
-  <h4 style="margin-top: 20px;">🎖️ 我的徽章</h4>
-  <div class="badges-grid" id="badges-grid">
-    <!-- 徽章會動態生成 -->
+  <!-- Tab Content: Achievements -->
+  <div id="tab-achievements" class="profile-tab-content" style="display: none;">
+    <div class="achievement-list" id="achievement-list" style="max-height: 500px;">
+      <!-- 成就項目會動態生成 -->
+    </div>
   </div>
 </div>
+
+<style>
+/* Profile Tabs CSS */
+.profile-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+}
+.profile-tab {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+.profile-tab:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+.profile-tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  font-weight: bold;
+}
+.profile-tab-content {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<script>
+function switchProfileTab(tabName) {
+  // Update Tab Buttons
+  document.querySelectorAll('.profile-tab').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.onclick.toString().includes(tabName)) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Update Content
+  document.querySelectorAll('.profile-tab-content').forEach(content => {
+    content.style.display = 'none';
+    content.classList.remove('active');
+  });
+  
+  const activeContent = document.getElementById(`tab-${tabName}`);
+  activeContent.style.display = 'block';
+  activeContent.classList.add('active');
+}
+</script>
 
 <!-- 他人資料彈窗 -->
 <div id="user-profile-modal" class="modal" style="max-width: 600px; display: none;">
@@ -2923,10 +3060,15 @@ function updateUserLevelUI() {
 function checkAchievements() {
   let hasNewAchievement = false;
   achievements.forEach(ach => {
-    if (ach.id.startsWith('chat_')) {
+    if (ach.id.startsWith('chat_') || ach.id === 'first_msg') {
       ach.progress = totalMessages;
     } else if (ach.id.startsWith('level_')) {
       ach.progress = userLevel;
+    }
+
+    // Cap progress at target for all achievements
+    if (ach.progress > ach.target) {
+      ach.progress = ach.target;
     }
     
     // 檢查是否完成（避免重複解鎖）

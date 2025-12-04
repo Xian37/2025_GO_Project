@@ -134,45 +134,6 @@ func (h *WebsocketHandler) readLoop(client *models.Client) {
 			continue
 		}
 
-		if msg.Type == "chat" && msg.Room == "_draw_game_" && strings.HasPrefix(msg.Content, "/setword ") {
-
-			word := strings.TrimSpace(strings.TrimPrefix(msg.Content, "/setword "))
-
-			// 1.
-			var broadcastMsg *models.Message
-
-			h.Service.DrawStateMutex.Lock() // <--
-			if h.Service.DrawStates[msg.Room] == nil {
-				h.Service.DrawStates[msg.Room] = &models.DrawState{}
-			}
-			state := h.Service.DrawStates[msg.Room]
-
-			if word != "" && (state.CurrentDrawer == "" || state.CurrentDrawer == client.Nickname) {
-				state.CurrentWord = word
-				state.CurrentDrawer = client.Nickname
-
-				//
-				client.Mu.Lock()
-				if err := client.Conn.WriteJSON(models.Message{Type: "new_round_drawer", Content: word, Room: msg.Room}); err != nil {
-					log.Println("WriteJSON error (draw drawer):", err)
-				}
-				client.Mu.Unlock()
-
-				//
-				blanks := strings.Repeat("_ ", len([]rune(word)))
-				broadcastMsg = &models.Message{ //
-					Type: "new_round_guesser", Room: msg.Room, Content: blanks, Nickname: client.Nickname,
-				}
-			}
-			h.Service.DrawStateMutex.Unlock() // <--
-
-			// 2.
-			if broadcastMsg != nil {
-				h.Service.BroadcastToRoomExcept(*broadcastMsg, client) // <--
-			}
-			continue
-		}
-
 		if msg.Type == "game_score" {
 			msg.Nickname = client.Nickname
 			msg.Avatar = client.Avatar

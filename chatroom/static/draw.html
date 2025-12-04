@@ -16,94 +16,134 @@ canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; } /* 星空畫布
   display: flex;
   background: rgba(255,255,255,0.05); 
   backdrop-filter: blur(10px); 
-  border-radius: 12px; 
-  box-shadow: 0 0 20px rgba(255,255,255,0.1); 
-  width: 95%; 
-  max-width: 1400px; 
-  height: 85vh;
-  margin: auto;
-  margin-top: 5vh;
+  border-radius: 0; /* Full screen on mobile */
+  box-shadow: none;
+  width: 100%; 
+  height: 100%; /* Use 100% to fit within fixed body */
+  position: fixed; /* Lock to viewport */
+  top: 0;
+  left: 0;
+  margin: 0;
   color: #fff; 
   z-index: 1;
-  padding: 20px;
+  padding: 0; /* Remove padding for max space */
+  box-sizing: border-box;
+  flex-direction: column; 
 }
-/* ... (其他 CSS 與上一版相同) ... */
+
+/* Desktop styles */
+@media (min-width: 768px) {
+  .container {
+    position: relative; /* Reset for desktop centering */
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    width: 95%;
+    max-width: 1400px;
+    height: 85vh;
+    margin: 5vh auto 0;
+    padding: 20px;
+    flex-direction: row;
+  }
+  #draw-container {
+    flex-basis: 70%;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    padding-right: 20px;
+    border-bottom: none;
+    padding-bottom: 0;
+    height: 100%;
+  }
+  #chat-container {
+    flex-basis: 30%;
+    padding-left: 20px;
+    padding-top: 0;
+    height: 100%;
+  }
+}
+
 #draw-container {
-  flex-basis: 70%;
+  flex: 1; /* Takes remaining space */
   display: flex;
   flex-direction: column;
-  padding-right: 20px;
-  border-right: 1px solid rgba(255,255,255,0.2);
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding: 10px;
+  min-height: 40%; /* Ensure canvas is visible */
 }
+
 #canvas {
   background: #fff;
   border-radius: 8px;
   cursor: crosshair;
   touch-action: none;
+  flex: 1; 
+  width: 100%;
+  height: 100%;
+  /* Fix for touch scrolling on canvas */
+  touch-action: none;
 }
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 10px 0;
+  padding: 5px 0;
+  justify-content: center;
+  flex-shrink: 0; /* Prevent toolbar from shrinking */
 }
 .toolbar input[type="color"] {
-  width: 40px; height: 40px; border: none; padding: 0;
-  background: none; cursor: pointer; margin: 0 10px;
+  width: 30px; height: 30px; margin: 0 5px;
 }
-.toolbar input[type="range"] { margin: 0 10px; }
 .toolbar button {
-  font-size: 1em; padding: 10px 12px; margin: 6px; border-radius: 8px;
-  border: none; background: rgba(255,255,255,0.1); color: #fff;
+  font-size: 0.9em; padding: 8px 10px; margin: 2px;
 }
-.toolbar button:hover { background: rgba(255,255,255,0.25); cursor: pointer; }
+
 #chat-container {
-  flex-basis: 30%;
+  flex: 1; /* Takes remaining space (usually ~50% on mobile) */
   display: flex;
   flex-direction: column;
-  padding-left: 20px;
+  overflow: hidden;
+  padding: 10px;
+  min-height: 30%;
+  background: rgba(0,0,0,0.2); /* Slight background to distinguish */
 }
+
 #word-display {
-  font-size: 1.5em;
+  font-size: 1.2em;
   font-weight: bold;
   text-align: center;
-  padding: 15px;
-  background: rgba(0,0,0,0.2);
+  padding: 10px;
+  background: rgba(255,255,255,0.1);
   border-radius: 8px;
-  min-height: 1.5em;
-  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+  flex-shrink: 0;
 }
+
 #messages {
-  flex-grow: 1;
+  flex: 1;
   overflow-y: auto;
   list-style: none;
   padding: 0;
-  margin: 10px 0;
+  margin: 0 0 10px 0;
 }
-.message { margin-bottom: 8px; line-height: 1.4; }
-.message .avatar {
-  font-size: 1.2em;
-  width: 28px;
-  display: inline-block;
-  text-align: center;
-}
-.message .avatar img { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; }
-.message .nick { font-weight: bold; opacity: 0.8; margin: 0 5px; }
-.message.system { color: #87CEFA; font-style: italic; }
+
 #guess-input {
   display: flex;
   width: 100%;
+  flex-shrink: 0; /* Important: prevents input from squishing */
 }
 #guess-input input {
   flex-grow: 1;
-  font-size: 1em; padding: 10px 12px; margin: 0; border-radius: 8px 0 0 8px;
-  border: none; background: rgba(0,0,0,0.2); color: #fff;
+  font-size: 16px; /* Prevent iOS zoom */
+  padding: 12px; 
+  margin: 0; border-radius: 8px 0 0 8px;
+  border: none; background: rgba(255,255,255,0.15); color: #fff;
 }
 #guess-input button {
-  font-size: 1em; padding: 10px 12px; margin: 0; border-radius: 0 8px 8px 0;
-  border: none; background: rgba(135, 206, 250, 0.3); color: #fff;
+  font-size: 1em; padding: 10px 15px; margin: 0; border-radius: 0 8px 8px 0;
+  border: none; background: rgba(135, 206, 250, 0.4); color: #fff;
 }
-#guess-input button:hover { background: rgba(135, 206, 250, 0.5); cursor: pointer; }
+#guess-input button:hover { background: rgba(135, 206, 250, 0.6); cursor: pointer; }
+
 /* --- 獨特鼠標樣式 (最終修復版) --- */
 
 /* 1. 設定整個網頁的「默認」鼠標 */
@@ -254,14 +294,18 @@ window.onload = () => {
     }
   };
   guessBtn.onclick = sendGuess;
+  guessBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    sendGuess();
+  });
   guessText.onkeydown = e => { if (e.key === 'Enter') sendGuess(); };
   disableDrawing();
   initWS();
 };
 
 function resizeCanvas() {
-    canvas.width = drawContainer.clientWidth;
-    canvas.height = drawContainer.clientHeight - 80;
+    canvas.width = drawContainer.offsetWidth;
+    canvas.height = drawContainer.offsetHeight - 60; // Subtract toolbar height approx
 }
 
 function initWS() {
@@ -332,7 +376,7 @@ function startDrawing(e) {
     x: x / canvas.width,
     y: y / canvas.height,
     color: colorPicker.value,
-    lineWidth: parseInt(lineWidth.value, 10) // <-- 
+    lineWidth: parseInt(lineWidth.value, 10)
   };
   ws.send(JSON.stringify(msg));
   drawOnCanvas(msg);
@@ -420,13 +464,8 @@ function sendGuess() {
 function addChatMessage(msg) {
   const li = document.createElement('li');
   li.className = 'message';
-  let avatarEl = '';
-  if (msg.avatar.startsWith('data:')) {
-    avatarEl = `<span class="avatar"><img src="${msg.avatar}"></span>`;
-  } else {
-    avatarEl = `<span class="avatar">${msg.avatar}</span>`;
-  }
-  li.innerHTML = `${avatarEl}<span class="nick">${msg.nickname}:</span> ${msg.content}`;
+  // Avatar display removed per user request
+  li.innerHTML = `<span class="nick">${msg.nickname}:</span> ${msg.content}`;
   messagesEl.appendChild(li);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }

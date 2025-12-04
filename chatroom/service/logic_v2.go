@@ -1,33 +1,24 @@
 package service
 
 import (
+	"chatroom/logger"
 	"chatroom/models"
-	"log"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
-// HandleMessageLoop (
-func (s *StateService) HandleMessageLoop() {
-	for {
-		msg := <-s.Broadcast
-
-		if msg.Timestamp == "" {
-			msg.Timestamp = time.Now().Format("15:04:05")
-		}
-
-		s.processMessage(msg)
+// ProcessMessage 處理所有類型的訊息 (V2)
+func (s *StateServiceV2) ProcessMessage(msg models.Message) {
+	if msg.Timestamp == "" {
+		msg.Timestamp = time.Now().Format("15:04:05")
 	}
-}
 
-func normalize(str string) string {
-	return strings.ToLower(strings.TrimSpace(str))
-}
-
-// processMessage
-func (s *StateService) processMessage(msg models.Message) {
-	//
-	log.Printf("[DEBUG] Processing Message: Type=[%s], Room=[%s], Nick=[%s]", msg.Type, msg.Room, msg.Nickname)
+	logger.Debug("Processing Message",
+		zap.String("type", msg.Type),
+		zap.String("room", msg.Room),
+		zap.String("nick", msg.Nickname))
 
 	switch msg.Type {
 	case "draw_start", "draw_move", "draw_end", "clear_canvas":
@@ -46,13 +37,13 @@ func (s *StateService) processMessage(msg models.Message) {
 		s.handleQuizAnswer(msg)
 	case "chat":
 		s.handleChat(msg)
-	default: // image, voice, join, leave
+	default: // image, voice, join, leave, etc.
 		s.handleDefault(msg)
 	}
 }
 
 // handleDraw
-func (s *StateService) handleDraw(msg models.Message) {
+func (s *StateServiceV2) handleDraw(msg models.Message) {
 	var clientsToWrite []*models.Client
 
 	s.RoomsMutex.RLock()
@@ -67,25 +58,25 @@ func (s *StateService) handleDraw(msg models.Message) {
 	s.RoomsMutex.RUnlock()
 
 	for _, client := range clientsToWrite {
-		safeWriteJSON(client, msg)
+		s.safeWriteJSON(client, msg)
 	}
 }
 
 // handleGameScore
-func (s *StateService) handleGameScore(msg models.Message) {
+func (s *StateServiceV2) handleGameScore(msg models.Message) {
 	newScore := models.GameScore{
 		Nickname: msg.Nickname, Avatar: msg.Avatar, Tries: msg.Tries, Time: msg.Time,
 	}
-	s.updateLeaderboard(newScore)
+	s.UpdateLeaderboard(newScore)
 }
 
 // handleReaction
-func (s *StateService) handleReaction(msg models.Message) {
+func (s *StateServiceV2) handleReaction(msg models.Message) {
 	s.BroadcastToRoom(msg)
 }
 
 // handleVoteStart
-func (s *StateService) handleVoteStart(msg models.Message) {
+func (s *StateServiceV2) handleVoteStart(msg models.Message) {
 	s.VotesMutex.Lock()
 	optionsMap := make(map[string]int)
 	for _, opt := range msg.Options {
@@ -96,15 +87,12 @@ func (s *StateService) handleVoteStart(msg models.Message) {
 	}
 	s.VotesMutex.Unlock()
 
-	s.HistoryMutex.Lock()
-	s.History[msg.Room] = append(s.History[msg.Room], msg)
-	s.HistoryMutex.Unlock()
-
+	s.AddHistory(msg)
 	s.BroadcastToRoom(msg)
 }
 
 // handleVoteAnswer
-func (s *StateService) handleVoteAnswer(msg models.Message) {
+func (s *StateServiceV2) handleVoteAnswer(msg models.Message) {
 	s.VotesMutex.Lock()
 	currentVote, exists := s.Votes[msg.Room]
 	var resultMsg models.Message
@@ -125,7 +113,7 @@ func (s *StateService) handleVoteAnswer(msg models.Message) {
 }
 
 // handleQuizStart
-func (s *StateService) handleQuizStart(msg models.Message) {
+func (s *StateServiceV2) handleQuizStart(msg models.Message) {
 	s.QuizzesMutex.Lock()
 	s.Quizzes[msg.Room] = &models.Quiz{
 		Question: msg.Question, Answer: msg.Answer, Active: true,
@@ -137,15 +125,12 @@ func (s *StateService) handleQuizStart(msg models.Message) {
 		Question: msg.Question, Timestamp: msg.Timestamp,
 	}
 
-	s.HistoryMutex.Lock()
-	s.History[msg.Room] = append(s.History[msg.Room], broadcastMsg)
-	s.HistoryMutex.Unlock()
-
+	s.AddHistory(broadcastMsg)
 	s.BroadcastToRoom(broadcastMsg)
 }
 
 // handleQuizAnswer
-func (s *StateService) handleQuizAnswer(msg models.Message) {
+func (s *StateServiceV2) handleQuizAnswer(msg models.Message) {
 	s.QuizzesMutex.Lock()
 	quiz, exists := s.Quizzes[msg.Room]
 	isCorrect := exists && quiz.Active && (quiz.Answer == msg.Answer)
@@ -163,16 +148,14 @@ func (s *StateService) handleQuizAnswer(msg models.Message) {
 			Type: "quiz_result", Room: msg.Room, Nickname: msg.Nickname, Avatar: msg.Avatar,
 			Content: msg.Content, Answer: correctAnswer, Timestamp: time.Now().Format("15:04:05"),
 		}
-		s.HistoryMutex.Lock()
-		s.History[msg.Room] = append(s.History[msg.Room], resultMsg)
-		s.HistoryMutex.Unlock()
+		s.AddHistory(resultMsg)
 		s.BroadcastToRoom(resultMsg)
 	}
 }
 
 // handleChat
-func (s *StateService) handleChat(msg models.Message) {
-	//
+func (s *StateServiceV2) handleChat(msg models.Message) {
+	// 1. "Draw & Guess" Logic
 	if msg.Room == "_draw_game_" {
 		s.DrawStateMutex.Lock()
 		if s.DrawStates[msg.Room] == nil {
@@ -183,6 +166,8 @@ func (s *StateService) handleChat(msg models.Message) {
 		// Handle /setword command
 		if strings.HasPrefix(msg.Content, "/setword ") {
 			word := strings.TrimPrefix(msg.Content, "/setword ")
+			logger.Info("Processing /setword", zap.String("word", word), zap.String("nick", msg.Nickname))
+
 			if word != "" {
 				state.CurrentWord = word
 				state.CurrentDrawer = msg.Nickname
@@ -210,19 +195,26 @@ func (s *StateService) handleChat(msg models.Message) {
 							guesserClients = append(guesserClients, client)
 						}
 					}
+				} else {
+					logger.Warn("No clients found in _draw_game_ during /setword")
 				}
 				s.RoomsMutex.RUnlock()
 
 				if drawerClient != nil {
-					safeWriteJSON(drawerClient, drawerMsg)
+					s.safeWriteJSON(drawerClient, drawerMsg)
+					logger.Info("Sent new_round_drawer to", zap.String("nick", drawerClient.Nickname))
+				} else {
+					logger.Warn("Drawer client not found in room", zap.String("target", msg.Nickname))
 				}
+
 				for _, client := range guesserClients {
-					safeWriteJSON(client, guesserMsg)
+					s.safeWriteJSON(client, guesserMsg)
 				}
 				return
 			}
 		}
 
+		// Handle Guessing
 		if state.CurrentWord != "" && msg.Nickname != state.CurrentDrawer && normalize(msg.Content) == normalize(state.CurrentWord) {
 			broadcastMsg := models.Message{
 				Type: "guess_correct", Room: msg.Room, Nickname: msg.Nickname,
@@ -237,30 +229,19 @@ func (s *StateService) handleChat(msg models.Message) {
 		s.DrawStateMutex.Unlock()
 	}
 
-	s.HistoryMutex.Lock()
+	// 2. Standard Chat Logic
 	if !strings.HasPrefix(msg.Room, "_") {
-		if len(s.History[msg.Room]) > 100 {
-			s.History[msg.Room] = s.History[msg.Room][len(s.History[msg.Room])-100:]
-		}
-		s.History[msg.Room] = append(s.History[msg.Room], msg)
+		s.AddHistory(msg)
 	}
-	s.HistoryMutex.Unlock()
-
 	s.BroadcastToRoom(msg)
 }
 
 // handleDefault
-func (s *StateService) handleDefault(msg models.Message) {
-	s.HistoryMutex.Lock()
+func (s *StateServiceV2) handleDefault(msg models.Message) {
 	if !strings.HasPrefix(msg.Room, "_") {
 		if msg.Type == "image" || msg.Type == "voice" || msg.Content != "" {
-			if len(s.History[msg.Room]) > 100 {
-				s.History[msg.Room] = s.History[msg.Room][len(s.History[msg.Room])-100:]
-			}
-			s.History[msg.Room] = append(s.History[msg.Room], msg)
+			s.AddHistory(msg)
 		}
 	}
-	s.HistoryMutex.Unlock()
-
 	s.BroadcastToRoom(msg)
 }

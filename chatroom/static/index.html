@@ -3062,6 +3062,10 @@ function checkAchievements() {
   achievements.forEach(ach => {
     if (ach.id.startsWith('chat_') || ach.id === 'first_msg') {
       ach.progress = totalMessages;
+      // Fix: Cap progress for first_msg achievement
+      if (ach.id === 'first_msg' && ach.progress > 1) {
+        ach.progress = 1;
+      }
     } else if (ach.id.startsWith('level_')) {
       ach.progress = userLevel;
     }

@@ -21,48 +21,86 @@ canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; } /* 星空畫布
   width: 95%; 
   max-width: 1400px; 
   height: 85vh;
-  margin: auto;
-  margin-top: 5vh;
+  /* Mobile optimization: Use dvh if available, fallback to vh */
+  height: 100dvh; 
+  max-height: 100dvh;
+  margin: 0 auto;
   color: #fff; 
   z-index: 1;
-  padding: 20px;
+  padding: 10px;
+  box-sizing: border-box;
+  flex-direction: column; /* Mobile first: stack vertically */
 }
-/* ... (其他 CSS 與上一版相同) ... */
+
+/* Desktop styles */
+@media (min-width: 768px) {
+  .container {
+    flex-direction: row;
+    height: 85vh;
+    margin-top: 5vh;
+    padding: 20px;
+  }
+  #draw-container {
+    flex-basis: 70%;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    padding-right: 20px;
+    border-bottom: none;
+    padding-bottom: 0;
+    height: 100%;
+  }
+  #chat-container {
+    flex-basis: 30%;
+    padding-left: 20px;
+    padding-top: 0;
+    height: 100%;
+  }
+}
+
 #draw-container {
-  flex-basis: 70%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  padding-right: 20px;
-  border-right: 1px solid rgba(255,255,255,0.2);
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+  min-height: 40%; /* Ensure canvas has space on mobile */
 }
+
 #canvas {
   background: #fff;
   border-radius: 8px;
   cursor: crosshair;
   touch-action: none;
+  flex: 1; /* Fill available space */
+  width: 100%;
+  height: 100%;
 }
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 10px 0;
+  padding: 5px 0;
+  justify-content: center;
 }
 .toolbar input[type="color"] {
-  width: 40px; height: 40px; border: none; padding: 0;
-  background: none; cursor: pointer; margin: 0 10px;
+  width: 30px; height: 30px; margin: 0 5px;
 }
-.toolbar input[type="range"] { margin: 0 10px; }
 .toolbar button {
-  font-size: 1em; padding: 10px 12px; margin: 6px; border-radius: 8px;
-  border: none; background: rgba(255,255,255,0.1); color: #fff;
+  font-size: 0.9em; padding: 8px 10px; margin: 2px;
 }
-.toolbar button:hover { background: rgba(255,255,255,0.25); cursor: pointer; }
+
 #chat-container {
-  flex-basis: 30%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  padding-left: 20px;
+  overflow: hidden;
+  padding-top: 10px;
+  min-height: 30%;
 }
+
+/* ... (Rest of CSS) ... */
+
 #word-display {
   font-size: 1.5em;
   font-weight: bold;
@@ -260,168 +298,17 @@ window.onload = () => {
 };
 
 function resizeCanvas() {
-    canvas.width = drawContainer.clientWidth;
-    canvas.height = drawContainer.clientHeight - 80;
+    canvas.width = drawContainer.offsetWidth;
+    canvas.height = drawContainer.offsetHeight - 60; // Subtract toolbar height approx
 }
 
-function initWS() {
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${window.location.host}/ws`);
-  ws.onopen = () => {
-    console.log('Draw game connected to WS');
-    ws.send(JSON.stringify({
-      type: 'switch', room: '_draw_game_', nickname: myNickname, avatar: myAvatar
-    }));
-  };
-  ws.onmessage = event => {
-    const msg = JSON.parse(event.data);
-    switch (msg.type) {
-      case 'draw_start':
-      case 'draw_move':
-      case 'draw_end':
-        drawOnCanvas(msg);
-        break;
-      case 'clear_canvas':
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        break;
-      case 'chat':
-        addChatMessage(msg);
-        break;
-      case 'guess_correct':
-        addSystemMessage(`🎉 ${msg.nickname} 猜對了！答案是：${msg.content}`);
-        wordDisplay.textContent = "等待繪圖者...";
-        disableDrawing();
-        break;
-      case 'new_round_drawer':
-        wordDisplay.textContent = `你的題目是：${msg.content}`;
-        addSystemMessage("你是繪圖者！請開始作畫。");
-        enableDrawing();
-        break;
-      case 'new_round_guesser':
-        wordDisplay.textContent = `題目：${msg.content}`;
-        addSystemMessage(`${msg.nickname} 正在作畫...`);
-        disableDrawing();
-        break;
-    }
-  };
-  ws.onclose = () => { addSystemMessage('已與伺服器斷線'); };
-  ws.onerror = err => { console.error('Draw WS Error:', err); };
-}
-
-function getMousePos(evt) {
-    const rect = canvas.getBoundingClientRect();
-    if (evt.touches) {
-        return {
-            x: evt.touches[0].clientX - rect.left,
-            y: evt.touches[0].clientY - rect.top
-        };
-    }
-    return {
-        x: evt.clientX - rect.left,
-        y: evt.clientY - rect.top
-    };
-}
-
-function startDrawing(e) {
-  if (!canDraw || e.button !== 0 && !e.touches) return;
-  e.preventDefault();
-  isDrawing = true;
-  const { x, y } = getMousePos(e);
-  const msg = {
-    type: 'draw_start', room: '_draw_game_', nickname: myNickname,
-    x: x / canvas.width,
-    y: y / canvas.height,
-    color: colorPicker.value,
-    lineWidth: parseInt(lineWidth.value, 10) // <-- 
-  };
-  ws.send(JSON.stringify(msg));
-  drawOnCanvas(msg);
-}
-
-function draw(e) {
-  if (!isDrawing || !canDraw) return;
-  e.preventDefault();
-
-  const now = Date.now();
-  if (now - lastSendTime < 30) { // Throttle to ~33 messages/sec
-    clearTimeout(drawThrottleTimeout);
-    drawThrottleTimeout = setTimeout(() => draw(e), 30 - (now - lastSendTime));
-    return;
-  }
-  lastSendTime = now;
-
-  const { x, y } = getMousePos(e);
-  const msg = {
-    type: 'draw_move', room: '_draw_game_', nickname: myNickname,
-    x: x / canvas.width,
-    y: y / canvas.height
-  };
-  ws.send(JSON.stringify(msg));
-  drawOnCanvas(msg);
-}
-
-function stopDrawing() {
-  if (!isDrawing) return;
-  clearTimeout(drawThrottleTimeout);
-  isDrawing = false;
-  const msg = { type: 'draw_end', room: '_draw_game_', nickname: myNickname };
-  ws.send(JSON.stringify(msg));
-  drawOnCanvas(msg);
-}
-
-function drawOnCanvas(msg) {
-  const x = msg.x * canvas.width;
-  const y = msg.y * canvas.height;
-  switch (msg.type) {
-    case 'draw_start':
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.strokeStyle = msg.color;
-      ctx.lineWidth = msg.lineWidth;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      break;
-    case 'draw_move':
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      break;
-    case 'draw_end':
-      ctx.stroke();
-      ctx.beginPath();
-      break;
-  }
-}
-
-function enableDrawing() {
-  canDraw = true;
-  canvas.style.cursor = 'crosshair';
-  clearBtn.disabled = false;
-}
-
-function disableDrawing() {
-  canDraw = false;
-  canvas.style.cursor = 'not-allowed';
-  clearBtn.disabled = true;
-}
-
-function sendGuess() {
-  const content = guessText.value.trim();
-  if (!content) return;
-  ws.send(JSON.stringify({
-    type: 'chat',
-    room: '_draw_game_',
-    nickname: myNickname,
-    avatar: myAvatar,
-    content: content
-  }));
-  guessText.value = '';
-}
+// ... (initWS) ...
 
 function addChatMessage(msg) {
   const li = document.createElement('li');
   li.className = 'message';
   let avatarEl = '';
-  if (msg.avatar.startsWith('data:')) {
+  if (msg.avatar.startsWith('data:') || msg.avatar.startsWith('http') || msg.avatar.startsWith('avatars/')) {
     avatarEl = `<span class="avatar"><img src="${msg.avatar}"></span>`;
   } else {
     avatarEl = `<span class="avatar">${msg.avatar}</span>`;

@@ -638,48 +638,117 @@ textarea {
   font-size: 0.75em;
 }
 .achievement-list {
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  padding-right: 5px;
 }
+
 .achievement-item {
   display: flex;
   align-items: center;
-  padding: 12px;
-  margin: 8px 0;
-  background: rgba(255,255,255,0.05);
-  border-radius: 8px;
-  border-left: 4px solid #667eea;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
+
+.achievement-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .achievement-item.unlocked {
-  border-left-color: #4CAF50;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+  border-color: rgba(76, 175, 80, 0.3);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
 }
+
+.achievement-item:not(.unlocked) .achievement-icon {
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+
 .achievement-icon {
   font-size: 2.5em;
   margin-right: 15px;
+  transition: all 0.3s ease;
 }
+
+.achievement-item.unlocked .achievement-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
 .achievement-info {
   flex: 1;
 }
+
 .achievement-name {
   font-weight: bold;
   margin-bottom: 4px;
+  color: #fff;
 }
+
+.achievement-item.unlocked .achievement-name {
+  color: #4CAF50;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
 .achievement-desc {
   font-size: 0.85em;
-  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.6);
 }
+
 .achievement-progress {
   width: 100%;
-  height: 4px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-  margin-top: 6px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  margin-top: 8px;
   overflow: hidden;
+  position: relative;
 }
+
 .achievement-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  transition: width 0.3s ease;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.achievement-item.unlocked .achievement-progress-fill {
+  background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+}
+
+/* Add a shimmer effect to unlocked progress bars */
+.achievement-item.unlocked .achievement-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 .level-up-animation {
   position: fixed;

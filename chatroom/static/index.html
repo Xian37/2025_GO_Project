@@ -2923,7 +2923,7 @@ function updateUserLevelUI() {
 function checkAchievements() {
   let hasNewAchievement = false;
   achievements.forEach(ach => {
-    if (ach.id.startsWith('chat_')) {
+    if (ach.id.startsWith('chat_') || ach.id === 'first_msg') {
       ach.progress = totalMessages;
     } else if (ach.id.startsWith('level_')) {
       ach.progress = userLevel;

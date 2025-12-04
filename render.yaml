@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: draw-guess-chatroom
+    env: go
+    plan: free
+    # Go builds need to happen where the go.mod file is, or we need to cd into it.
+    # We also need to run the app from the directory containing the 'static' folder
+    # so that http.FileServer(http.Dir("./static")) works correctly.
+    buildCommand: cd chatroom && go build -o app main.go
+    startCommand: cd chatroom && ./app
+    envVars:
+      - key: PORT
+        fromEnv: PORT

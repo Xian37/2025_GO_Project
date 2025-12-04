@@ -179,6 +179,50 @@ func (s *StateService) handleChat(msg models.Message) {
 			s.DrawStates[msg.Room] = &models.DrawState{}
 		}
 		state := s.DrawStates[msg.Room]
+
+		// Handle /setword command
+		if strings.HasPrefix(msg.Content, "/setword ") {
+			word := strings.TrimPrefix(msg.Content, "/setword ")
+			if word != "" {
+				state.CurrentWord = word
+				state.CurrentDrawer = msg.Nickname
+				s.DrawStateMutex.Unlock() // Unlock before sending messages
+
+				// Notify drawer
+				drawerMsg := models.Message{
+					Type: "new_round_drawer", Room: msg.Room, Content: word,
+				}
+				// Notify guessers
+				guesserMsg := models.Message{
+					Type: "new_round_guesser", Room: msg.Room, Nickname: msg.Nickname, Content: strings.Repeat("*", len([]rune(word))),
+				}
+
+				var drawerClient *models.Client
+				var guesserClients []*models.Client
+
+				s.RoomsMutex.RLock()
+				clientsInRoom, ok := s.Rooms[msg.Room]
+				if ok {
+					for client := range clientsInRoom {
+						if client.Nickname == msg.Nickname {
+							drawerClient = client
+						} else {
+							guesserClients = append(guesserClients, client)
+						}
+					}
+				}
+				s.RoomsMutex.RUnlock()
+
+				if drawerClient != nil {
+					safeWriteJSON(drawerClient, drawerMsg)
+				}
+				for _, client := range guesserClients {
+					safeWriteJSON(client, guesserMsg)
+				}
+				return
+			}
+		}
+
 		if state.CurrentWord != "" && msg.Nickname != state.CurrentDrawer && normalize(msg.Content) == normalize(state.CurrentWord) {
 			broadcastMsg := models.Message{
 				Type: "guess_correct", Room: msg.Room, Nickname: msg.Nickname,

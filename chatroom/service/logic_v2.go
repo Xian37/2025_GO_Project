@@ -35,6 +35,8 @@ func (s *StateServiceV2) ProcessMessage(msg models.Message) {
 		s.handleQuizStart(msg)
 	case "quiz_answer":
 		s.handleQuizAnswer(msg)
+	case "get_leaderboard":
+		s.handleGetLeaderboard(msg)
 	case "chat":
 		s.handleChat(msg)
 	default: // image, voice, join, leave, etc.
@@ -153,6 +155,11 @@ func (s *StateServiceV2) handleQuizAnswer(msg models.Message) {
 	}
 }
 
+// handleGetLeaderboard
+func (s *StateServiceV2) handleGetLeaderboard(msg models.Message) {
+	s.broadcastLeaderboard()
+}
+
 // handleChat
 func (s *StateServiceV2) handleChat(msg models.Message) {
 	// 1. "Draw & Guess" Logic
@@ -231,6 +238,16 @@ func (s *StateServiceV2) handleChat(msg models.Message) {
 
 	// 2. Standard Chat Logic
 	if !strings.HasPrefix(msg.Room, "_") {
+		// Easter Egg: Gopher Rain
+		if msg.Content == "/gopher" {
+			broadcastMsg := models.Message{
+				Type: "gopher_rain", Room: msg.Room, Nickname: msg.Nickname,
+				Content: "Let it rain Gophers!", Timestamp: time.Now().Format("15:04:05"),
+			}
+			s.BroadcastToRoom(broadcastMsg)
+			return
+		}
+
 		s.AddHistory(msg)
 	}
 	s.BroadcastToRoom(msg)

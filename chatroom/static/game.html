@@ -2,255 +2,329 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>猜數字競技版</title>
+<title>猜數字競技版 V2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-/* ✨ (功能 2) 改回 Canvas 星空 */
+/* ✨ 全局樣式 */
 html, body { 
   margin: 0; padding: 0; height: 100%; font-family: 'Nunito', 'Segoe UI', sans-serif; 
   color: #e0f7fa; display: flex; justify-content: center; align-items: center;
-  background-color: #0a0a1a; /* 深色底色 */
+  background-color: #0a0a1a;
   overflow: hidden;
+  cursor: url("my_cursor.cur"), auto; /* 自訂鼠標 */
 }
-canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; } /* 星空畫布 */
+canvas#galaxy { position: fixed; top: 0; left: 0; z-index: -1; }
+canvas#confetti { position: fixed; top: 0; left: 0; z-index: 999; pointer-events: none; }
 
 .container { 
-  background: rgba(10, 10, 20, 0.7); 
-  backdrop-filter: blur(10px); 
-  border-radius: 12px; 
-  padding: 32px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4); 
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(16, 18, 27, 0.75); 
+  backdrop-filter: blur(16px); 
+  border-radius: 20px; 
+  padding: 40px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   width: 90%; 
-  max-width: 800px; 
+  max-width: 900px; 
   color: #fff; 
   z-index: 1;
   text-align: center;
+  transition: transform 0.3s ease;
 }
 
-/* (所有其他精緻化 CSS 與上一版相同) */
 .game-layout {
   display: flex;
   flex-wrap: wrap;
-  gap: 30px;
+  gap: 40px;
 }
 .game-panel {
-  flex: 1;
-  min-width: 300px;
+  flex: 1.2;
+  min-width: 320px;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .info-panel {
-  flex: 1;
-  min-width: 300px;
+  flex: 0.8;
+  min-width: 280px;
   text-align: left;
+  background: rgba(0,0,0,0.2);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.05);
 }
-.game-panel h2 { 
-  font-size: 2.5em; 
-  font-weight: 300; 
-  letter-spacing: 1px; 
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #87CEFA;
+
+h2 { 
+  font-size: 2.8em; 
+  font-weight: 700; 
+  margin: 0 0 10px 0;
+  background: linear-gradient(45deg, #87CEFA, #00BFFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(135, 206, 250, 0.3);
 }
-.game-panel p { 
-  font-size: 1.1em; 
-  opacity: 0.9; 
-  line-height: 1.5;
+
+.status-bar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  font-size: 1.1em;
+  opacity: 0.9;
+}
+.status-item {
+  background: rgba(255,255,255,0.1);
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 遊戲控制區 */
+.control-group {
+  display: flex;
+  gap: 10px;
   margin-bottom: 20px;
 }
+select {
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  outline: none;
+}
+.sound-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  width: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+}
+
 .game-box {
   margin: 20px 0;
   display: flex;
   gap: 10px;
+  position: relative;
 }
 input[type="number"] {
   font-family: 'Nunito', 'Segoe UI', sans-serif;
-  font-size: 1.5em;
-  padding: 12px 15px; 
-  margin: 0;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.1);
+  font-size: 1.8em;
+  padding: 15px 20px; 
+  border-radius: 12px;
+  border: 2px solid rgba(135, 206, 250, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   color: #fff;
   flex-grow: 1;
   text-align: center;
+  transition: all 0.3s;
+  cursor: url("my_text.cur"), text;
 }
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; margin: 0; 
+input[type="number"]:focus {
+  border-color: #87CEFA;
+  box-shadow: 0 0 15px rgba(135, 206, 250, 0.3);
+  outline: none;
 }
-input[type=number] { -moz-appearance: textfield; }
-button {
-  font-family: 'Nunito', 'Segoe UI', sans-serif;
-  font-size: 1.2em;
-  padding: 12px 20px;
-  margin: 0;
-  border-radius: 8px;
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+button.action-btn {
+  font-size: 1.3em;
+  padding: 0 30px;
+  border-radius: 12px;
   border: none;
-  background: rgba(135, 206, 250, 0.4);
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
+  background: linear-gradient(135deg, #87CEFA, #00BFFF);
+  color: #000;
+  font-weight: 800;
+  cursor: url("my_pointer.cur"), pointer;
   transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
 }
-button:hover { 
-  background: rgba(135, 206, 250, 0.6);
+button.action-btn:hover { 
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 191, 255, 0.5);
 }
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+button.action-btn:active { transform: translateY(1px); }
+
+/* 反饋動畫 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
 }
-button.reset-btn { 
-  background: rgba(255,255,255,0.1); 
-  width: 100%;
-  margin-top: 10px;
-}
-button.reset-btn:hover { background: rgba(255,255,255,0.2); transform: none; }
+.shake { animation: shake 0.4s ease-in-out; }
+
 #feedback {
-  font-size: 2em;
+  font-size: 1.5em;
   font-weight: bold;
-  margin: 20px 0;
-  min-height: 1.3em;
+  margin: 10px 0;
+  min-height: 1.5em;
   opacity: 0;
-  transform: scale(0.8);
+  transform: translateY(10px);
   transition: all 0.3s ease;
 }
-#feedback.show { opacity: 1; transform: scale(1); }
-#feedback.low { color: #87CEFA; }
-#feedback.high { color: #FF8A8A; }
-#result {
-  font-size: 1.3em; margin-top: 20px; min-height: 1.3em;
-  font-weight: bold; color: #4CAF50;
+#feedback.show { opacity: 1; transform: translateY(0); }
+#feedback.low { color: #87CEFA; text-shadow: 0 0 10px rgba(135, 206, 250, 0.5); }
+#feedback.high { color: #FF6B6B; text-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+#feedback.win { color: #4CAF50; text-shadow: 0 0 10px rgba(76, 175, 80, 0.5); font-size: 1.8em; }
+
+/* 提示條 */
+.hint-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+  position: relative;
 }
-.info-panel h3 {
-  margin-top: 0;
-  padding-bottom: 5px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+.hint-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #87CEFA, #FF6B6B);
+  width: 100%;
+  opacity: 0.5;
 }
+.hint-marker {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: #fff;
+  box-shadow: 0 0 5px #fff;
+  transition: left 0.3s;
+  display: none;
+}
+
+.nav-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.nav-btn {
+  flex: 1;
+  padding: 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #ccc;
+  border-radius: 8px;
+  cursor: url("my_pointer.cur"), pointer;
+  transition: all 0.2s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+/* 歷史記錄與排行榜 */
+h3 { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-top: 0; color: #aaa; font-size: 1em; text-transform: uppercase; letter-spacing: 1px; }
+
 #guess-history {
   list-style: none;
   padding: 0;
   margin: 0 0 20px 0;
-  height: 200px;
+  height: 180px;
   overflow-y: auto;
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
 }
 #guess-history li {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  justify-content: space-between;
   font-size: 1.1em;
-  font-weight: bold;
 }
-#guess-history li span {
-  font-weight: 300;
-  opacity: 0.8;
-  margin-left: 10px;
-}
-#guess-history li.low span { color: #87CEFA; }
-#guess-history li.high span { color: #FF8A8A; }
-table {
-  margin: 0; border-collapse: collapse; width: 100%;
-}
-th, td {
-  border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 12px;
-  font-size: 0.9em;
-}
-th { background: rgba(255, 255, 255, 0.1); }
-.avatar-cell { font-size: 1.2em; padding: 4px; text-align: center; }
-.avatar-cell img { 
-  width:24px; height:24px; border-radius:50%; 
-  object-fit: cover; vertical-align: middle; 
-}
-/* --- 獨特鼠標樣式 (最終修復版) --- */
+#guess-history li .val { font-weight: bold; }
+#guess-history li.low .val { color: #87CEFA; }
+#guess-history li.high .val { color: #FF6B6B; }
+#guess-history li .tag { font-size: 0.8em; opacity: 0.6; }
 
-/* 1. 設定整個網頁的「默認」鼠標 */
-html, body {
-  cursor: url("my_cursor.cur"), auto;
-}
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 0.8em; color: #aaa; padding: 5px; }
+td { padding: 8px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9em; }
+.rank-1 { color: #FFD700; font-weight: bold; }
+.rank-2 { color: #C0C0C0; font-weight: bold; }
+.rank-3 { color: #CD7F32; font-weight: bold; }
+.avatar-img { width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-right: 8px; }
 
-/* 2. 設定「可點擊」元素 (按鈕等) 的手型鼠標 */
-/*
- * 這是最重要的修改：
- * 我們同時設定了元素本身 (button) 和它的懸停狀態 (button:hover)，
- * 並加上 !important 來確保它絕對優先。
-*/
-button,
-label.button,
-.avatar-select,
-#room-list li,
-.vote-option,
-.msg-emoji-picker button,
-.modal-close-btn,
-#cancel-image,
-#cancel-audio,
-input[type="color"],
-button:hover,
-label.button:hover,
-.avatar-select:hover,
-#room-list li:hover,
-.vote-option:hover,
-.msg-emoji-picker button:hover {
-  /* * !important 會覆蓋掉您檔案中任何其他地方的 'cursor: pointer' 設置
-   */
-  cursor: url("my_pointer.cur"), pointer !important; 
-}
+/* 滾動條 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+::-webkit-scrollbar-thumb { background: rgba(135, 206, 250, 0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(135, 206, 250, 0.5); }
 
-/* 3. 設定文字輸入框的鼠標 (使用 my_text.cur) */
-input[type="text"],
-input[type="number"],
-textarea {
-  cursor: url("my_text.cur"), text;
-}
-/* --- 鼠標樣式 結束 --- */
-
+/* 鼠標樣式 */
+button, select, .nav-btn, .sound-btn { cursor: url("my_pointer.cur"), pointer !important; }
 </style>
 </head>
 <body>
 
 <canvas id="galaxy"></canvas>
+<canvas id="confetti"></canvas>
 
 <div class="container">
-  
   <div class="game-layout">
     
+    <!-- 左側：遊戲主區 -->
     <div class="game-panel">
-      <h2>🎮 猜數字競技版</h2>
-      <p>
-        我已選好一個 1 到 100 的數字。
-        <br>⏱️ 時間：<span id="timer">0</span> 秒 | 
-        <span id="attempts-text">猜測：0 次</span>
-      </p>
-      <div id="feedback"></div>
-      <div class="game-box" id="game-box">
-        <input id="guess" type="number" placeholder="輸入猜測" onkeydown="if(event.key==='Enter') checkGuess();">
-        <button id="guess-btn" onclick="checkGuess()">猜！</button>
+      <h2>🔢 終極猜數字</h2>
+      
+      <div class="control-group">
+        <select id="difficulty" onchange="changeDifficulty()">
+          <option value="50">🟢 簡單 (1-50)</option>
+          <option value="100" selected>🟡 普通 (1-100)</option>
+          <option value="1000">🔴 困難 (1-1000)</option>
+          <option value="10000">💀 惡夢 (1-10000)</option>
+        </select>
+        <button class="sound-btn" id="sound-toggle" onclick="toggleSound()" title="開關音效">🔊</button>
       </div>
-      <p id="result"></p>
-      <button onclick="resetGame()" class="reset-btn">重新開始</button>
-      <button onclick="location.href='index.html'" class="reset-btn">返回聊天室</button>
+
+      <div class="status-bar">
+        <div class="status-item">⏱️ <span id="timer">0</span>s</div>
+        <div class="status-item">🎯 <span id="attempts-text">0 次</span></div>
+        <div class="status-item">📏 範圍: <span id="range-text">1-100</span></div>
+      </div>
+
+      <div id="feedback">準備開始...</div>
+      
+      <div class="game-box" id="game-box">
+        <input id="guess" type="number" placeholder="輸入數字" onkeydown="if(event.key==='Enter') checkGuess();">
+        <button class="action-btn" id="guess-btn" onclick="checkGuess()">猜！</button>
+      </div>
+
+      <!-- 視覺化提示條 -->
+      <div class="hint-bar-container">
+        <div class="hint-bar"></div>
+        <div class="hint-marker" id="hint-marker"></div>
+      </div>
+
+      <div class="nav-btns">
+        <button onclick="resetGame()" class="nav-btn">🔄 重新開始</button>
+        <button onclick="location.href='index.html'" class="nav-btn">🚪 返回大廳</button>
+      </div>
     </div>
 
+    <!-- 右側：資訊區 -->
     <div class="info-panel">
-      <h3>猜測紀錄</h3>
+      <h3>📜 本局紀錄</h3>
       <ul id="guess-history">
+        <!-- 歷史記錄 -->
       </ul>
+      
       <h3>🏆 全域排行榜</h3>
       <div style="height: 200px; overflow-y: auto;">
         <table>
           <thead>
             <tr>
               <th>#</th>
-              <th>頭像</th>
-              <th>暱稱</th>
+              <th>玩家</th>
               <th>次數</th>
               <th>時間</th>
             </tr>
           </thead>
           <tbody id="leaderboard-body">
+            <!-- 排行榜數據 -->
           </tbody>
         </table>
       </div>
@@ -259,14 +333,17 @@ textarea {
 </div>
 
 <script>
-// ✨ (功能 2) 加入動態星空 JS
+// --- 🌌 星空背景 ---
 const canvas = document.getElementById('galaxy');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 let stars = [];
-for (let i = 0; i < 800; i++) {
-  stars.push({ x: Math.random(), y: Math.random(), z: Math.random() });
+function initStars() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = [];
+  for (let i = 0; i < 800; i++) {
+    stars.push({ x: Math.random(), y: Math.random(), z: Math.random() });
+  }
 }
 function drawGalaxy() {
   ctx.fillStyle = '#0a0a1a';
@@ -285,151 +362,234 @@ function drawGalaxy() {
   ctx.restore();
   requestAnimationFrame(drawGalaxy);
 }
+initStars();
 drawGalaxy();
-window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+window.onresize = initStars;
 
-// (所有遊戲邏輯 JS 與上一版相同)
+// --- 🔊 音效系統 (Web Audio API) ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let soundEnabled = true;
+
+function playTone(freq, type, duration) {
+  if (!soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  switch (type) {
+    case 'correct':
+      playTone(600, 'sine', 0.1);
+      setTimeout(() => playTone(800, 'sine', 0.2), 100);
+      break;
+    case 'wrong':
+      playTone(200, 'sawtooth', 0.3);
+      break;
+    case 'win':
+      [400, 500, 600, 800].forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.2), i * 150));
+      break;
+  }
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+// --- 🎉 彩帶特效 ---
+const confettiCanvas = document.getElementById('confetti');
+const cCtx = confettiCanvas.getContext('2d');
+let confetti = [];
+
+function fireConfetti() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+  confetti = [];
+  for (let i = 0; i < 150; i++) {
+    confetti.push({
+      x: window.innerWidth / 2, y: window.innerHeight / 2,
+      vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20 - 5,
+      color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+      size: Math.random() * 10 + 5
+    });
+  }
+  animateConfetti();
+}
+
+function animateConfetti() {
+  cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  let active = false;
+  confetti.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.5; // gravity
+    cCtx.fillStyle = p.color;
+    cCtx.fillRect(p.x, p.y, p.size, p.size);
+    if (p.y < window.innerHeight) active = true;
+  });
+  if (active) requestAnimationFrame(animateConfetti);
+}
+
+// --- 🎮 遊戲邏輯 ---
 let ws;
-let myNickname = '';
-let myAvatar = '';
-let answer = Math.floor(Math.random() * 100) + 1;
+let myNickname = '', myAvatar = '';
+let maxRange = 100;
+let answer = 0;
 let attempts = 0;
-let startTime = Date.now();
+let startTime = 0;
 let finished = false;
-let timerInterval = setInterval(updateTimer, 1000);
+let timerInterval;
+
 const guessInput = document.getElementById("guess");
-const guessBtn = document.getElementById("guess-btn");
-const resultEl = document.getElementById("result");
 const feedbackEl = document.getElementById("feedback");
-const gameBox = document.getElementById("game-box");
 const historyList = document.getElementById("guess-history");
-const attemptsText = document.getElementById("attempts-text");
+const hintMarker = document.getElementById("hint-marker");
 
 window.onload = () => {
   myNickname = localStorage.getItem("chatUser");
   myAvatar = localStorage.getItem("chatAvatar");
-  if (!myNickname || !myAvatar) {
+  if (!myNickname) {
     alert("請先登入聊天室！");
     location.href = 'index.html';
     return;
   }
   initWS();
+  resetGame();
 };
 
 function initWS() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(`${proto}//${window.location.host}/ws`);
   ws.onopen = () => {
-    console.log('Game connected to WS');
-    ws.send(JSON.stringify({
-      type: 'switch', room: '_game_', nickname: myNickname, avatar: myAvatar
-    }));
+    ws.send(JSON.stringify({ type: 'switch', room: '_game_', nickname: myNickname, avatar: myAvatar }));
     ws.send(JSON.stringify({ type: 'get_leaderboard' }));
   };
   ws.onmessage = event => {
     const msg = JSON.parse(event.data);
     if (msg.type === 'leaderboard_update') {
-      const scores = JSON.parse(msg.content);
-      renderLeaderboard(scores);
+      renderLeaderboard(JSON.parse(msg.content));
     }
   };
-  ws.onclose = () => { console.log('Game disconnected'); };
-  ws.onerror = err => { console.error('Game WS Error:', err); };
 }
 
-function updateTimer() {
-  if (finished) return;
-  document.getElementById("timer").textContent = Math.floor((Date.now() - startTime) / 1000);
-}
-
-function checkGuess() {
-  if (finished) return;
-  
-  const guess = parseInt(guessInput.value);
-  if (isNaN(guess) || guess < 1 || guess > 100) {
-    feedbackEl.textContent = "請輸入 1-100";
-    feedbackEl.className = 'show high';
-    return;
-  }
-
-  attempts++;
-  attemptsText.textContent = `猜測：${attempts} 次`;
-  feedbackEl.classList.remove('show');
-  
-  const li = document.createElement("li");
-  
-  setTimeout(() => {
-    if (guess < answer) {
-      feedbackEl.textContent = `太低了！`;
-      feedbackEl.className = 'show low';
-      li.className = 'low';
-      li.innerHTML = `${guess} <span>(太低了)</span>`;
-    } else if (guess > answer) {
-      feedbackEl.textContent = `太高了！`;
-      feedbackEl.className = 'show high';
-      li.className = 'high';
-      li.innerHTML = `${guess} <span>(太高了)</span>`;
-    } else {
-      finished = true;
-      clearInterval(timerInterval);
-      const timeUsed = Math.floor((Date.now() - startTime) / 1000);
-      
-      feedbackEl.classList.remove('show');
-      gameBox.style.display = 'none';
-      resultEl.textContent = `🎉 恭喜！答案就是 ${answer}！你用了 ${attempts} 次，${timeUsed} 秒`;
-      
-      li.className = 'correct';
-      li.innerHTML = `${guess} <span>(🎉 答對了！)</span>`;
-      
-      ws.send(JSON.stringify({
-        type: 'game_score', tries: attempts, time: timeUsed
-      }));
-    }
-    historyList.appendChild(li);
-    historyList.scrollTop = historyList.scrollHeight;
-  }, 10);
-  
-  guessInput.value = "";
+function changeDifficulty() {
+  maxRange = parseInt(document.getElementById('difficulty').value);
+  document.getElementById('range-text').textContent = `1-${maxRange}`;
+  resetGame();
 }
 
 function resetGame() {
-  answer = Math.floor(Math.random() * 100) + 1;
+  answer = Math.floor(Math.random() * maxRange) + 1;
   attempts = 0;
   startTime = Date.now();
   finished = false;
   
   guessInput.value = "";
-  resultEl.textContent = "";
-  feedbackEl.textContent = "";
-  feedbackEl.classList.remove('show');
-  gameBox.style.display = 'flex';
+  guessInput.disabled = false;
+  document.getElementById('guess-btn').disabled = false;
+  feedbackEl.textContent = "準備開始...";
+  feedbackEl.className = "";
   historyList.innerHTML = "";
-  attemptsText.textContent = `猜測：0 次`;
-  
+  document.getElementById("attempts-text").textContent = "0 次";
   document.getElementById("timer").textContent = "0";
+  hintMarker.style.display = 'none';
+  
   clearInterval(timerInterval);
-  timerInterval = setInterval(updateTimer, 1000);
+  timerInterval = setInterval(() => {
+    if (!finished) document.getElementById("timer").textContent = Math.floor((Date.now() - startTime) / 1000);
+  }, 1000);
+}
+
+function checkGuess() {
+  if (finished) return;
+  const guess = parseInt(guessInput.value);
+  
+  if (isNaN(guess) || guess < 1 || guess > maxRange) {
+    feedbackEl.textContent = `請輸入 1-${maxRange} 之間的數字`;
+    feedbackEl.className = 'show';
+    return;
+  }
+
+  attempts++;
+  document.getElementById("attempts-text").textContent = `${attempts} 次`;
+  
+  // 更新提示條位置
+  const percent = (guess / maxRange) * 100;
+  hintMarker.style.left = `${percent}%`;
+  hintMarker.style.display = 'block';
+
+  const li = document.createElement("li");
+  
+  if (guess === answer) {
+    // Win
+    finished = true;
+    clearInterval(timerInterval);
+    const timeUsed = Math.floor((Date.now() - startTime) / 1000);
+    
+    feedbackEl.textContent = `🎉 恭喜！答案是 ${answer}！`;
+    feedbackEl.className = 'show win';
+    playSound('win');
+    fireConfetti();
+    
+    li.innerHTML = `<span class="val" style="color:#4CAF50">${guess}</span> <span class="tag">✅ 正確答案</span>`;
+    guessInput.disabled = true;
+    document.getElementById('guess-btn').disabled = true;
+    
+    // Send score
+    ws.send(JSON.stringify({ type: 'game_score', tries: attempts, time: timeUsed }));
+    
+  } else {
+    // Wrong
+    playSound('wrong');
+    document.querySelector('.container').classList.add('shake');
+    setTimeout(() => document.querySelector('.container').classList.remove('shake'), 400);
+    
+    if (guess < answer) {
+      feedbackEl.textContent = "太低了！再試試看 🔼";
+      feedbackEl.className = 'show low';
+      li.className = 'low';
+      li.innerHTML = `<span class="val">${guess}</span> <span class="tag">太低</span>`;
+    } else {
+      feedbackEl.textContent = "太高了！再試試看 🔽";
+      feedbackEl.className = 'show high';
+      li.className = 'high';
+      li.innerHTML = `<span class="val">${guess}</span> <span class="tag">太高</span>`;
+    }
+  }
+  
+  historyList.prepend(li); // 最新紀錄在最上面
+  guessInput.value = "";
+  guessInput.focus();
 }
 
 function renderLeaderboard(scores) {
   const board = document.getElementById("leaderboard-body");
   board.innerHTML = "";
   if (!scores || scores.length === 0) {
-    board.innerHTML = '<tr><td colspan="5">目前還沒有紀錄</td></tr>';
+    board.innerHTML = '<tr><td colspan="4" style="text-align:center; opacity:0.5;">暫無紀錄</td></tr>';
     return;
   }
   scores.forEach((score, index) => {
     const row = board.insertRow();
-    let avatarContent = '';
-    if (score.avatar.startsWith('data:')) {
-      avatarContent = `<img src="${score.avatar}">`;
-    } else {
-      avatarContent = score.avatar;
-    }
+    let rankClass = '';
+    if (index === 0) rankClass = 'rank-1';
+    if (index === 1) rankClass = 'rank-2';
+    if (index === 2) rankClass = 'rank-3';
+    
+    let avatarHtml = score.avatar.startsWith('data:') || score.avatar.startsWith('avatars/') 
+      ? `<img src="${score.avatar}" class="avatar-img">` 
+      : `<span style="margin-right:5px;">${score.avatar}</span>`;
+
     row.innerHTML = `
-      <td>#${index + 1}</td>
-      <td class="avatar-cell">${avatarContent}</td>
-      <td>${score.nickname}</td>
+      <td class="${rankClass}">#${index + 1}</td>
+      <td>${avatarHtml} ${score.nickname}</td>
       <td>${score.tries}</td>
       <td>${score.time}s</td>
     `;

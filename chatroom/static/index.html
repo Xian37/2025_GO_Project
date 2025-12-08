@@ -919,6 +919,9 @@ textarea {
 
 <div id="modal-backdrop"></div>
 
+<!-- Gopher Rain Container -->
+<div id="gopher-rain-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; display: none;"></div>
+
 <div id="quiz-modal" class="modal">
   <button class="modal-close-btn" onclick="closeModals()">&times;</button>
   <h4>🧠 建立搶答</h4>
@@ -1893,6 +1896,10 @@ function handleIncoming(msg) {
       renderVote(msg); break;
     case 'vote_result':
       updateVoteResults(msg); break;
+    case 'gopher_rain':
+      startGopherRain();
+      addSystemMessage('🐹 Gopher 大軍來襲！');
+      break;
     case 'quiz_start':
       quizAnswer = msg.answer; renderQuiz(msg); break;
     case 'quiz_answer':
@@ -3261,6 +3268,63 @@ function onMessageSent(type) {
   
   checkAchievements();
   checkTitles();
+}
+
+// 🐹 Gopher Rain Animation
+function startGopherRain() {
+  const container = document.getElementById('gopher-rain-container');
+  container.style.display = 'block';
+  container.innerHTML = ''; // Clear previous
+
+  // Create 50 Gophers
+  for (let i = 0; i < 50; i++) {
+    setTimeout(() => {
+      createFallingGopher(container);
+    }, i * 100); // Stagger creation
+  }
+
+  // Stop after 8 seconds
+  setTimeout(() => {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }, 8000);
+}
+
+function createFallingGopher(container) {
+  const gopher = document.createElement('img');
+  // 使用官方 Go Gopher 的圖片 URL
+  gopher.src = 'https://raw.githubusercontent.com/golang-samples/gopher-vector/master/gopher.png';
+  
+  gopher.style.position = 'absolute';
+  // 大幅增加尺寸：80px 到 180px
+  const size = Math.random() * 100 + 80;
+  gopher.style.width = size + 'px';
+  gopher.style.height = 'auto';
+  
+  gopher.style.left = Math.random() * 100 + 'vw';
+  gopher.style.top = -size + 'px'; // 從螢幕上方更遠處開始
+  gopher.style.userSelect = 'none';
+  gopher.style.zIndex = '10000';
+  
+  // Random animation duration and rotation
+  const duration = Math.random() * 2 + 2; // 2-4s
+  const rotation = Math.random() * 360;
+  
+  gopher.style.transition = `top ${duration}s linear, transform ${duration}s linear`;
+  gopher.style.transform = `rotate(${rotation}deg)`;
+  
+  container.appendChild(gopher);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    gopher.style.top = '110vh';
+    gopher.style.transform = `rotate(${rotation + 360}deg)`;
+  });
+
+  // Remove after animation
+  setTimeout(() => {
+    gopher.remove();
+  }, duration * 1000);
 }
 
 function checkExistingLogin() {

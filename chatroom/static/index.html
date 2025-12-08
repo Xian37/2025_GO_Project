@@ -1717,9 +1717,8 @@ function generateRandomName() {
   const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
   const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
   
-  // 隨機生成1-2顆星星，放在名字左右
-  const starCount = Math.floor(Math.random() * 2) + 1;
-  const stars = '⭐'.repeat(starCount);
+  // 固定只加一顆星星，放在名字左右
+  const stars = '⭐';
   
   const randomName = `${stars}${randomAdj}${randomNoun}${stars}`;
   nicknameInput.value = randomName;

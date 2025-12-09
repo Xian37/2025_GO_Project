@@ -1879,6 +1879,12 @@ function handleIncoming(msg) {
     case 'chat': case 'image': case 'voice': case 'gif':
       console.log('[DEBUG] Rendering message from:', msg.nickname, 'myNickname:', myNickname);
       renderMessage(msg);
+      
+      // 自動朗讀（僅限新訊息）
+      if (!isReceivingHistory) {
+        autoReadMessage(msg);
+      }
+
       // 只在收到自己的訊息時更新統計（只比對暱稱，因為頭貼可能格式不同）
       // ✨ FIX: 增加 !isReceivingHistory 判斷，避免歷史訊息重複計算經驗值
       if (msg.nickname === myNickname && !isReceivingHistory) {
@@ -2965,11 +2971,26 @@ function speakText(text) {
 function autoReadMessage(msg) {
   if (!ttsEnabled || msg.type === 'system') return;
   
+  // 過濾特殊符號，只保留文字、數字和基本標點，避免朗讀亂碼或過多符號
+  const filterSymbols = (text) => {
+    if (!text) return '';
+    return text.replace(/[^\w\s\u4e00-\u9fa5,.?!，。？！]/g, ' ');
+  };
+
   let textToRead = '';
+  // 確保暱稱也被過濾（因為暱稱常包含星星等符號）
+  const cleanNickname = filterSymbols(msg.nickname);
+
   if (msg.type === 'chat') {
-    textToRead = `${msg.nickname}說：${msg.content}`;
+    const cleanContent = filterSymbols(msg.content);
+    if (cleanContent.trim()) {
+      textToRead = `${cleanNickname}說：${cleanContent}`;
+    }
   } else if (msg.type === 'voice' && msg.transcript) {
-    textToRead = `${msg.nickname}的語音：${msg.transcript}`;
+    const cleanTranscript = filterSymbols(msg.transcript);
+    if (cleanTranscript.trim()) {
+      textToRead = `${cleanNickname}的語音：${cleanTranscript}`;
+    }
   }
   
   if (textToRead) {

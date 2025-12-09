@@ -110,11 +110,6 @@ func (s *StateServiceV2) broadcastMessage(msg models.Message) {
 		return
 	}
 
-	// 添加到歷史記錄
-	if msg.Type == "chat" || msg.Type == "image" || msg.Type == "voice" {
-		s.AddHistory(msg)
-	}
-
 	// 廣播給所有客戶端
 	for client := range clients {
 		if !s.safeWriteJSON(client, msg) {

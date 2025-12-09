@@ -1826,12 +1826,28 @@ function handleIncoming(msg) {
   console.log('[DEBUG] Handling message type:', msg.type, 'timestamp:', msg.timestamp, 'isReceivingHistory:', isReceivingHistory);
   
   // 如果正在接收歷史訊息，且當前房間已清除，則過濾歷史訊息
-  if (isReceivingHistory && (msg.type === 'chat' || msg.type === 'image' || msg.type === 'voice' || msg.type === 'gif' || msg.type === 'join' || msg.type === 'leave')) {
-    const targetRoom = msg.room || currentRoom;
-    const clearedTime = localStorage.getItem(`cleared_${targetRoom}`);
-    if (clearedTime === 'CLEARED') {
-      console.log('[DEBUG] Skipping history message due to clear:', msg.type, msg.nickname || msg.content);
+  if (isReceivingHistory) {
+    // 1. 過濾掉歷史的加入/離開訊息，避免刷新時看到重複的系統通知
+    if (msg.type === 'join' || msg.type === 'leave') {
       return;
+    }
+
+    // 2. 檢查是否被用戶手動清除
+    if (msg.type === 'chat' || msg.type === 'image' || msg.type === 'voice' || msg.type === 'gif') {
+      const targetRoom = msg.room || currentRoom;
+      const clearedTimeStr = localStorage.getItem(`cleared_${targetRoom}`);
+      
+      // 只有當 clearedTimeStr 存在且是數字（代表時間戳）時才進行過濾
+      if (clearedTimeStr && !isNaN(clearedTimeStr)) {
+        const clearedTime = parseInt(clearedTimeStr);
+        const msgTime = new Date(msg.timestamp).getTime();
+        
+        // 如果訊息時間早於清除時間，則過濾掉
+        if (msgTime <= clearedTime) {
+          console.log('[DEBUG] Skipping history message due to clear:', msg.type, msg.nickname || msg.content);
+          return;
+        }
+      }
     }
   }
   
@@ -1864,7 +1880,8 @@ function handleIncoming(msg) {
       console.log('[DEBUG] Rendering message from:', msg.nickname, 'myNickname:', myNickname);
       renderMessage(msg);
       // 只在收到自己的訊息時更新統計（只比對暱稱，因為頭貼可能格式不同）
-      if (msg.nickname === myNickname) {
+      // ✨ FIX: 增加 !isReceivingHistory 判斷，避免歷史訊息重複計算經驗值
+      if (msg.nickname === myNickname && !isReceivingHistory) {
         console.log('[DEBUG] This is my message, calling onMessageSent');
         onMessageSent(msg.type);
       }
@@ -2054,9 +2071,10 @@ function clearMessages() {
   if (confirm('確定要清除所有訊息嗎？\n\n此操作會清除本地訊息記錄，\n刷新後將不會顯示此房間的歷史訊息。')) {
     const messagesEl = document.getElementById('messages');
     messagesEl.innerHTML = '';
-    // 記錄清除標記，使用 "CLEARED" 作為標記值
-    localStorage.setItem(`cleared_${currentRoom}`, 'CLEARED');
-    addSystemMessage('✨ 訊息已清除（刷新後不會載入歷史訊息）');
+    // 記錄清除標記，使用當前時間戳記，而不是 "CLEARED"
+    // 這樣我們可以只過濾掉「清除時間點之前」的歷史訊息，而保留之後的新訊息
+    localStorage.setItem(`cleared_${currentRoom}`, Date.now().toString());
+    addSystemMessage('✨ 訊息已清除（刷新後不會載入舊的歷史訊息）');
     console.log('[DEBUG] Cleared messages for room:', currentRoom);
   }
 }
